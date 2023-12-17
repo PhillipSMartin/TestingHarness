@@ -1,0 +1,1089 @@
+TEST|Score Tourney
+
+# Runs seven regression tests:
+#   ScoreTourney
+#   ZeroTableDaylong
+#   OneBoardDaylong
+#   TwoBoardDaylong
+#   FullDaylong
+#   PauseAndRestart
+#   FullTourney (Standard)
+#
+# To test
+#   go to Bridge/backend directory and execute
+#        bin/run_setup.sh (kills any existing Sections and Tables and clean the /tmp directory of logfiles)
+#   go to TestingHarness/build directory and execute
+#       ./run_test.sh AllSessionTests local
+#   go to Bridge/backend directory and execute
+#       bin/run_all_session_tests.sh 
+
+# Send Request
+SEND|Score tournament|QUEUE|Q.ScoreService|{"corrid":"25","replyto":"/queue/SessionTestScored","type":1,"scoring":"M","sides":0,"boards":[{"board":1,"recaps":[{"section":0,"results":[{"table":1,"board":1,"ns":{"prno":1,"summary":"4SS=","result":420,"status":1},"ew":{"prno":2,"summary":"4SS=","result":-420,"status":1}},{"table":2,"board":1,"ns":{"prno":3,"summary":"4SS+1","result":450,"status":1},"ew":{"prno":4,"summary":"4SS+1","result":-450,"status":1}}]}]},{"board":2,"recaps":[{"section":0,"results":[{"table":1,"board":2,"ns":{"prno":1,"summary":"4SS=","result":620,"status":1},"ew":{"prno":4,"summary":"4SS=","result":-620,"status":1}},{"table":2,"board":2,"ns":{"prno":3,"summary":"4SS-1","result":-100,"status":1},"ew":{"prno":2,"summary":"4SS-1","result":100,"status":1}}]}]}]}
+RECEIVE|Receive reply|QUEUE|SessionTestScored|{"boards":[{"board":1,"boardid":1,"recaps":[{"results":[{"board":1,"ew":{"award":100.0,"prno":2,"result":-420,"status":1,"summary":"4SS="},"ns":{"award":0.0,"prno":1,"result":420,"status":1,"summary":"4SS="},"table":1},{"board":1,"ew":{"award":0.0,"prno":4,"result":-450,"status":1,"summary":"4SS+1"},"ns":{"award":100.0,"prno":3,"result":450,"status":1,"summary":"4SS+1"},"table":2}],"section":0}]},{"board":2,"boardid":2,"recaps":[{"results":[{"board":2,"ew":{"award":0.0,"prno":4,"result":-620,"status":1,"summary":"4SS="},"ns":{"award":100.0,"prno":1,"result":620,"status":1,"summary":"4SS="},"table":1},{"board":2,"ew":{"award":100.0,"prno":2,"result":100,"status":1,"summary":"4SS-1"},"ns":{"award":0.0,"prno":3,"result":-100,"status":1,"summary":"4SS-1"},"table":2}],"section":0}]}],"corrid":"25","status":true,"tally":[{"count":2,"iid":1,"raw":100.0,"total":50.0},{"count":2,"iid":2,"raw":200.0,"total":100.0},{"count":2,"iid":3,"raw":100.0,"total":50.0},{"count":2,"iid":4,"raw":0.0,"total":0.0}]}
+
+# Send Invalid Request
+SEND|Score tournament|QUEUE|Q.ScoreService|{"corrid":"26","replyto":"/queue/SessionTestScored","type":1,"scoring":"M","sides":0,"boards":[]}
+RECEIVE|Receive reply|QUEUE|SessionTestScored|{"status":false,"error":"No boards to score"}
+
+TEST|Zero-Table Daylong Tourney
+
+# Send Timeout
+SEND|Force Timeout|QUEUE|Event.tm=zero-table-daylong-test-0-0|{"event":8,"action":4}
+RECEIVE|Timeout Section|TOPIC|State.tm=zero-table-daylong-test-0-0|{"action":13,"external":true,"notice":10,"type":"timer"}
+RECEIVE|EOR state dump|TOPIC|State.tm=zero-table-daylong-test-0-0|{"notice":18,"trigger":{"event":8,"action":4}}
+RECEIVE|EOT state dump|TOPIC|State.tm=zero-table-daylong-test-0-0|{"notice":18,"trigger":{"event":8,"action":5}}
+
+# EOT Sent to Recorder
+RECEIVE|Recorder - EOT|TOPIC|State.sc=zero-table-daylong-test|{"notice":4,"corrid":"25","id":"zero-table-daylong-test-0","roster":[],"round":2,"secno":0}
+RECEIVE|Final message|TOPIC|State.tm=zero-table-daylong-test-0-0|{"notice":8}
+
+
+
+TEST|Full (Standard) Tourney
+
+# Receive initial state dumps
+RECEIVE|INITIAL state dump|TOPIC|State.tm=full-tourney-test-0-0|{"id":"full-tourney-test-0","notice":7,"round":1,"seating":[[{"ewno":1,"nsno":2,"tableno":1},{"ewno":3,"nsno":4,"tableno":2}],[{"ewno":2,"nsno":3,"tableno":1},{"ewno":1,"nsno":4,"tableno":2}],[{"ewno":3,"nsno":1,"tableno":1},{"ewno":2,"nsno":4,"tableno":2}]]}
+RECEIVE|Startup state dump|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":1,"tableid":"full-tourney-test-0-1","trigger":{"action":0,"type":"command"},"turn":{"message":""}}}
+RECEIVE|Startup state dump|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":1,"tableid":"full-tourney-test-0-2","trigger":{"action":0,"type":"command"},"turn":{"message":""}}}
+
+# Get diagnostics
+SEND|Request params|QUEUE|Event.tm=full-tourney-test-0-0|{"event":9,"params":1,"replyto":"SessionTestDiagnostics"}
+RECEIVE|Show params|QUEUE|SessionTestDiagnostics|{"params":{"bpr":2}}
+
+# JOIN messages for round 1
+SEND|JOIN by West|QUEUE|Event.tb=full-tourney-test-0-1|{"action":1,"id":"233","seat":1,"type":"player"}
+RECEIVE|JOIN by West|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":2,"tableid":"full-tourney-test-0-1","trigger":{"action":1,"external":false,"id":"233","seat":1,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+SEND|JOIN by East|QUEUE|Event.tb=full-tourney-test-0-1|{"action":1,"id":"79","seat":3,"type":"player"}
+RECEIVE|JOIN by East|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":3,"tableid":"full-tourney-test-0-1","trigger":{"action":1,"external":false,"id":"79","seat":3,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+SEND|JOIN by North|QUEUE|Event.tb=full-tourney-test-0-1|{"action":1,"id":"411","seat":2,"type":"player"}
+RECEIVE|JOIN by North|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":4,"tableid":"full-tourney-test-0-1","trigger":{"action":1,"external":false,"id":"411","seat":2,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+SEND|JOIN by South|QUEUE|Event.tb=full-tourney-test-0-1|{"action":1,"id":"292","seat":4,"type":"player"}
+RECEIVE|JOIN by South|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":5,"tableid":"full-tourney-test-0-1","trigger":{"action":1,"external":false,"id":"292","seat":4,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+SEND|JOIN by West|QUEUE|Event.tb=full-tourney-test-0-2|{"action":1,"id":"444","seat":1,"type":"player"}
+RECEIVE|JOIN by West|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":2,"tableid":"full-tourney-test-0-2","trigger":{"action":1,"external":false,"id":"444","seat":1,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+SEND|JOIN by East|QUEUE|Event.tb=full-tourney-test-0-2|{"action":1,"id":"472","seat":3,"type":"player"}
+RECEIVE|JOIN by East|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":3,"tableid":"full-tourney-test-0-2","trigger":{"action":1,"external":false,"id":"472","seat":3,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+SEND|JOIN by North|QUEUE|Event.tb=full-tourney-test-0-2|{"action":1,"id":"846","seat":2,"type":"player"}
+RECEIVE|JOIN by North|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":4,"tableid":"full-tourney-test-0-2","trigger":{"action":1,"external":false,"id":"846","seat":2,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+SEND|JOIN by South|QUEUE|Event.tb=full-tourney-test-0-2|{"action":1,"id":"847","seat":4,"type":"player"}
+RECEIVE|JOIN by South|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":5,"tableid":"full-tourney-test-0-2","trigger":{"action":1,"external":false,"id":"847","seat":4,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+RECEIVE|SETUP message|TOPIC|State.tm=full-tourney-test-0-0|{"bpr":2,"deals":[{"dealer":2,"number":1,"vul":1},{"dealer":3,"number":2,"vul":2}],"notice":1,"round":1,"rounds":3,"seating":[{"ewno":1,"nsno":2,"tableno":1},{"ewno":3,"nsno":4,"tableno":2}],"tables":2}
+
+# Board 1 Table 1 - Bid to 5C by North
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":6,"tableid":"full-tourney-test-0-1","trigger":{"action":2,"board":{"dealer":2,"number":1,"vul":1},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":2}}}
+SEND|5C by North|QUEUE|Event.tb=full-tourney-test-0-1|{"alert":"","call":21,"seat":2,"type":"auction"}
+RECEIVE|5C by North|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":7,"tableid":"full-tourney-test-0-1","trigger":{"alert":"","call":21,"seat":2,"type":"auction"}}}
+SEND|P by East|QUEUE|Event.tb=full-tourney-test-0-1|{"alert":"","call":38,"seat":3,"type":"auction"}
+RECEIVE|P by East|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":8,"tableid":"full-tourney-test-0-1","trigger":{"alert":"","call":38,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=full-tourney-test-0-1|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":9,"tableid":"full-tourney-test-0-1","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=full-tourney-test-0-1|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":10,"tableid":"full-tourney-test-0-1","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+RECEIVE|PHASE TIMER canceled|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":11,"tableid":"full-tourney-test-0-1","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 1 Table 1 - Make Opening lead and claim making 5
+SEND|Opening lead by East|QUEUE|Event.tb=full-tourney-test-0-1|{"card":1,"seat":3,"type":"cardplay"}
+RECEIVE|Opening lead by East|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":12,"tableid":"full-tourney-test-0-1","trigger":{"card":1,"seat":3,"type":"cardplay"}}}
+SEND|Claim 11 tricks by North|QUEUE|Event.tb=full-tourney-test-0-1|{"action":5,"comment":"Marked double squeeze","seat":2,"tricks":11,"type":"command"}
+RECEIVE|Claim 11 tricks by North|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":13,"tableid":"full-tourney-test-0-1","trigger":{"action":5,"comment":"Marked double squeeze","seat":2,"tricks":11,"type":"command"}}}
+SEND|Claim accepted by East|QUEUE|Event.tb=full-tourney-test-0-1|{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}
+SEND|Claim accepted by West|QUEUE|Event.tb=full-tourney-test-0-1|{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by East|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":14,"tableid":"full-tourney-test-0-1","trigger":{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}}}
+RECEIVE|Claim accepted by West|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":15,"tableid":"full-tourney-test-0-1","trigger":{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}}}
+
+# Board 1 Table 2 - Bid to 3NT by North
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":6,"tableid":"full-tourney-test-0-2","trigger":{"action":2,"board":{"dealer":2,"number":1,"vul":1},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":2}}}
+SEND|3N by North|QUEUE|Event.tb=full-tourney-test-0-2|{"alert":"","call":15,"seat":2,"type":"auction"}
+RECEIVE|3N by North|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":7,"tableid":"full-tourney-test-0-2","trigger":{"alert":"","call":15,"seat":2,"type":"auction"}}}
+SEND|P by East|QUEUE|Event.tb=full-tourney-test-0-2|{"alert":"","call":38,"seat":3,"type":"auction"}
+RECEIVE|P by East|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":8,"tableid":"full-tourney-test-0-2","trigger":{"alert":"","call":38,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=full-tourney-test-0-2|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":9,"tableid":"full-tourney-test-0-2","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=full-tourney-test-0-2|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":10,"tableid":"full-tourney-test-0-2","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+RECEIVE|PHASE TIMER canceled|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":11,"tableid":"full-tourney-test-0-2","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 1 Table 2 - Make Opening lead and claim making 4
+SEND|Opening lead by East|QUEUE|Event.tb=full-tourney-test-0-2|{"card":1,"seat":3,"type":"cardplay"}
+RECEIVE|Opening lead by East|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":12,"tableid":"full-tourney-test-0-2","trigger":{"card":1,"seat":3,"type":"cardplay"}}}
+SEND|Claim 10 tricks by North|QUEUE|Event.tb=full-tourney-test-0-2|{"action":5,"comment":"","seat":2,"tricks":10,"type":"command"}
+RECEIVE|Claim 10 tricks by North|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":13,"tableid":"full-tourney-test-0-2","trigger":{"action":5,"comment":"","seat":2,"tricks":10,"type":"command"}}}
+SEND|Claim accepted by East|QUEUE|Event.tb=full-tourney-test-0-2|{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}
+SEND|Claim accepted by West|QUEUE|Event.tb=full-tourney-test-0-2|{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by East|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":14,"tableid":"full-tourney-test-0-2","trigger":{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}}}
+RECEIVE|Claim accepted by West|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":15,"tableid":"full-tourney-test-0-2","trigger":{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}}}
+
+# Board 2 Table 1 - Bid to 3NT by East
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":16,"tableid":"full-tourney-test-0-1","trigger":{"action":2,"board":{"dealer":3,"number":2,"vul":2},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":3}}}
+SEND|3N by East|QUEUE|Event.tb=full-tourney-test-0-1|{"alert":"","call":15,"seat":3,"type":"auction"}
+RECEIVE|3N by East|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":17,"tableid":"full-tourney-test-0-1","trigger":{"alert":"","call":15,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=full-tourney-test-0-1|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":18,"tableid":"full-tourney-test-0-1","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=full-tourney-test-0-1|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":19,"tableid":"full-tourney-test-0-1","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+SEND|P by North|QUEUE|Event.tb=full-tourney-test-0-1|{"alert":"","call":38,"seat":2,"type":"auction"}
+RECEIVE|P by North|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":20,"tableid":"full-tourney-test-0-1","trigger":{"alert":"","call":38,"seat":2,"type":"auction"}}}
+RECEIVE|PHASE TIMER expired|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":21,"tableid":"full-tourney-test-0-1","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 2 Table 1 - Make Opening lead and claim making 4
+SEND|Opening lead by South|QUEUE|Event.tb=full-tourney-test-0-1|{"card":2,"seat":4,"type":"cardplay"}
+RECEIVE|Opening lead by South|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":22,"tableid":"full-tourney-test-0-1","trigger":{"card":2,"seat":4,"type":"cardplay"}}}
+SEND|Claim 10 tricks by East|QUEUE|Event.tb=full-tourney-test-0-1|{"action":5,"comment":"","seat":3,"tricks":10,"type":"command"}
+RECEIVE|Claim 10 tricks by East|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":23,"tableid":"full-tourney-test-0-1","trigger":{"action":5,"comment":"","seat":3,"tricks":10,"type":"command"}}}
+SEND|Claim accepted by North|QUEUE|Event.tb=full-tourney-test-0-1|{"action":6,"number":1,"seat":2,"reject":false,"type":"command"}
+SEND|Claim accepted by South|QUEUE|Event.tb=full-tourney-test-0-1|{"action":6,"number":1,"seat":4,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by North|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":24,"tableid":"full-tourney-test-0-1","trigger":{"action":6,"number":1,"seat":2,"reject":false,"type":"command"}}}
+RECEIVE|Claim accepted by South|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":25,"tableid":"full-tourney-test-0-1","trigger":{"action":6,"number":1,"seat":4,"reject":false,"type":"command"}}}
+
+# Board 2 Table 2 - Bid to 3NT by East
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":16,"tableid":"full-tourney-test-0-2","trigger":{"action":2,"board":{"dealer":3,"number":2,"vul":2},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":3}}}
+SEND|3N by East|QUEUE|Event.tb=full-tourney-test-0-2|{"alert":"","call":15,"seat":3,"type":"auction"}
+RECEIVE|3N by East|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":17,"tableid":"full-tourney-test-0-2","trigger":{"alert":"","call":15,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=full-tourney-test-0-2|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":18,"tableid":"full-tourney-test-0-2","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=full-tourney-test-0-2|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":19,"tableid":"full-tourney-test-0-2","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+SEND|P by North|QUEUE|Event.tb=full-tourney-test-0-2|{"alert":"","call":38,"seat":2,"type":"auction"}
+RECEIVE|P by North|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":20,"tableid":"full-tourney-test-0-2","trigger":{"alert":"","call":38,"seat":2,"type":"auction"}}}
+RECEIVE|PHASE TIMER expired|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":21,"tableid":"full-tourney-test-0-2","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 2 Table 2 - Make Opening lead and claim making 7
+SEND|Opening lead by North|QUEUE|Event.tb=full-tourney-test-0-2|{"card":2,"seat":4,"type":"cardplay"}
+RECEIVE|Opening lead by North|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":22,"tableid":"full-tourney-test-0-2","trigger":{"card":2,"seat":4,"type":"cardplay"}}}
+SEND|Claim 12 tricks by East|QUEUE|Event.tb=full-tourney-test-0-2|{"action":5,"comment":"","seat":3,"tricks":12,"type":"command"}
+RECEIVE|Claim 12 tricks by East|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":23,"tableid":"full-tourney-test-0-2","trigger":{"action":5,"comment":"","seat":3,"tricks":12,"type":"command"}}}
+SEND|Claim accepted by North|QUEUE|Event.tb=full-tourney-test-0-2|{"action":6,"number":1,"seat":2,"reject":false,"type":"command"}
+SEND|Claim accepted by South|QUEUE|Event.tb=full-tourney-test-0-2|{"action":6,"number":1,"seat":4,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by North|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":24,"tableid":"full-tourney-test-0-2","trigger":{"action":6,"number":1,"seat":2,"reject":false,"type":"command"}}}
+RECEIVE|Claim accepted by South|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":25,"tableid":"full-tourney-test-0-2","trigger":{"action":6,"number":1,"seat":4,"reject":false,"type":"command"}}}
+
+# Get diagnostics
+SEND|Request params|QUEUE|Event.tm=full-tourney-test-0-0|{"event":9,"all":1,"replyto":"SessionTestDiagnostics"}
+RECEIVE|Show params|QUEUE|SessionTestDiagnostics|{"params":{"bpr":2}}
+
+# End of round 1
+RECEIVE|EOR message|TOPIC|State.tm=full-tourney-test-0-0|{"notice":5,"round":1}
+RECEIVE|Scorer message|TOPIC|State.sc=full-tourney-test|{"notice":11,"tally":[{"count":1,"iid":1,"raw":0.0,"total":0.0},{"count":1,"iid":2,"raw":100.0,"total":100.0},{"count":1,"iid":3,"raw":0.0,"total":0.0},{"count":1,"iid":4,"raw":100.0,"total":100.0}]}
+RECEIVE|Scorer message|TOPIC|State.sc=full-tourney-test|{"notice":11,"tally":[{"count":2,"iid":1,"raw":100.0,"total":50.0},{"count":2,"iid":2,"raw":100.0,"total":50.0},{"count":2,"iid":3,"raw":100.0,"total":50.0},{"count":2,"iid":4,"raw":100.0,"total":50.0}]}
+RECEIVE|MOVE message|TOPIC|State.tm=full-tourney-test-0-0|{"bpr":2,"deals":[{"dealer":4,"number":3,"vul":3},{"dealer":1,"number":4,"vul":4}],"notice":3,"round":2,"seating":[{"ewno":2,"nsno":3,"tableno":1},{"ewno":1,"nsno":4,"tableno":2}]}
+RECEIVE|Table 1 MOVE message|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":26,"tableid":"full-tourney-test-0-1","trigger":{"action":4,"round":2,"tableid":"full-tourney-test-0-1","type":"command"}}}
+RECEIVE|Table 2 MOVE message|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":26,"tableid":"full-tourney-test-0-2","trigger":{"action":4,"round":2,"tableid":"full-tourney-test-0-2","type":"command"}}}
+
+# Get diagnostics
+SEND|Request params|QUEUE|Event.tm=full-tourney-test-0-0|{"event":9,"all":1,"replyto":"SessionTestDiagnostics"}
+RECEIVE|Show state|QUEUE|SessionTestDiagnostics|{"round":2}
+
+# Join messages for round 2
+SEND|JOIN by West|QUEUE|Event.tb=full-tourney-test-0-1|{"action":1,"id":"411","seat":1,"type":"player"}
+RECEIVE|JOIN by West|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":27,"tableid":"full-tourney-test-0-1","trigger":{"action":1,"external":false,"id":"411","seat":1,"type":"player"},"turn":{"message":"No active deal","phase":0,"status":0}}}
+SEND|JOIN by East|QUEUE|Event.tb=full-tourney-test-0-1|{"action":1,"id":"292","seat":3,"type":"player"}
+RECEIVE|JOIN by East|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":28,"tableid":"full-tourney-test-0-1","trigger":{"action":1,"external":false,"id":"292","seat":3,"type":"player"},"turn":{"message":"No active deal","phase":0,"status":0}}}
+SEND|JOIN by North|QUEUE|Event.tb=full-tourney-test-0-1|{"action":1,"id":"444","seat":2,"type":"player"}
+RECEIVE|JOIN by North|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":29,"tableid":"full-tourney-test-0-1","trigger":{"action":1,"external":false,"id":"444","seat":2,"type":"player"},"turn":{"message":"No active deal","phase":0,"status":0}}}
+SEND|JOIN by South|QUEUE|Event.tb=full-tourney-test-0-1|{"action":1,"id":"472","seat":4,"type":"player"}
+RECEIVE|JOIN by South|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":30,"tableid":"full-tourney-test-0-1","trigger":{"action":1,"external":false,"id":"472","seat":4,"type":"player"},"turn":{"message":"No active deal","phase":0,"status":0}}}
+SEND|JOIN by West|QUEUE|Event.tb=full-tourney-test-0-2|{"action":1,"id":"233","seat":1,"type":"player"}
+RECEIVE|JOIN by West|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":27,"tableid":"full-tourney-test-0-2","trigger":{"action":1,"external":false,"id":"233","seat":1,"type":"player"},"turn":{"message":"No active deal","phase":0,"status":0}}}
+SEND|JOIN by East|QUEUE|Event.tb=full-tourney-test-0-2|{"action":1,"id":"79","seat":3,"type":"player"}
+RECEIVE|JOIN by East|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":28,"tableid":"full-tourney-test-0-2","trigger":{"action":1,"external":false,"id":"79","seat":3,"type":"player"},"turn":{"message":"No active deal","phase":0,"status":0}}}
+
+# Board 3 Table 1 - Bid to 3H  by South
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":31,"tableid":"full-tourney-test-0-1","trigger":{"action":2,"board":{"dealer":4,"number":3,"vul":3},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":4}}}
+SEND|3H by South|QUEUE|Event.tb=full-tourney-test-0-1|{"alert":"","call":13,"seat":4,"type":"auction"}
+RECEIVE|3H by South|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":32,"tableid":"full-tourney-test-0-1","trigger":{"alert":"","call":13,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=full-tourney-test-0-1|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":33,"tableid":"full-tourney-test-0-1","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+SEND|P by North|QUEUE|Event.tb=full-tourney-test-0-1|{"alert":"","call":38,"seat":2,"type":"auction"}
+RECEIVE|P by North|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":34,"tableid":"full-tourney-test-0-1","trigger":{"alert":"","call":38,"seat":2,"type":"auction"}}}
+SEND|P by East|QUEUE|Event.tb=full-tourney-test-0-1|{"alert":"","call":38,"seat":3,"type":"auction"}
+RECEIVE|P by East|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":35,"tableid":"full-tourney-test-0-1","trigger":{"alert":"","call":38,"seat":3,"type":"auction"}}}
+RECEIVE|PHASE TIMER canceled|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":36,"tableid":"full-tourney-test-0-1","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 3 Table 1 - Make Opening lead and claim down 3
+SEND|Opening lead by West|QUEUE|Event.tb=full-tourney-test-0-1|{"card":5,"seat":1,"type":"cardplay"}
+RECEIVE|Opening lead by West|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":37,"tableid":"full-tourney-test-0-1","trigger":{"card":5,"seat":1,"type":"cardplay"}}}
+SEND|Claim 6 tricks by South|QUEUE|Event.tb=full-tourney-test-0-1|{"action":5,"comment":"","seat":4,"tricks":6,"type":"command"}
+RECEIVE|Claim 6 tricks by South|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":38,"tableid":"full-tourney-test-0-1","trigger":{"action":5,"comment":"","seat":4,"tricks":6,"type":"command"}}}
+SEND|Claim accepted by East|QUEUE|Event.tb=full-tourney-test-0-1|{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}
+SEND|Claim accepted by West|QUEUE|Event.tb=full-tourney-test-0-1|{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by East|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":39,"tableid":"full-tourney-test-0-1","trigger":{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}}}
+RECEIVE|Claim accepted by West|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":40,"tableid":"full-tourney-test-0-1","trigger":{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}}}
+
+# Board 3 Table 2 - Bid to 3NT by South
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":29,"tableid":"full-tourney-test-0-2","trigger":{"action":2,"board":{"dealer":4,"number":3,"vul":3},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":4}}}
+SEND|3N by South|QUEUE|Event.tb=full-tourney-test-0-2|{"alert":"","call":15,"seat":4,"type":"auction"}
+RECEIVE|3N by South|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":30,"tableid":"full-tourney-test-0-2","trigger":{"alert":"","call":15,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=full-tourney-test-0-2|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":31,"tableid":"full-tourney-test-0-2","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+SEND|P by North|QUEUE|Event.tb=full-tourney-test-0-2|{"alert":"","call":38,"seat":2,"type":"auction"}
+RECEIVE|P by North|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":32,"tableid":"full-tourney-test-0-2","trigger":{"alert":"","call":38,"seat":2,"type":"auction"}}}
+SEND|P by East|QUEUE|Event.tb=full-tourney-test-0-2|{"alert":"","call":38,"seat":3,"type":"auction"}
+RECEIVE|P by East|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":33,"tableid":"full-tourney-test-0-2","trigger":{"alert":"","call":38,"seat":3,"type":"auction"}}}
+RECEIVE|PHASE TIMER canceled|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":34,"tableid":"full-tourney-test-0-2","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 3 Table 2 - Make Opening lead and claim making 6
+SEND|Opening lead by West|QUEUE|Event.tb=full-tourney-test-0-2|{"card":5,"seat":1,"type":"cardplay"}
+RECEIVE|Opening lead by West|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":35,"tableid":"full-tourney-test-0-2","trigger":{"card":5,"seat":1,"type":"cardplay"}}}
+SEND|Claim 12 tricks by South|QUEUE|Event.tb=full-tourney-test-0-2|{"action":5,"comment":"","seat":4,"tricks":12,"type":"command"}
+RECEIVE|Claim 12 tricks by South|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":36,"tableid":"full-tourney-test-0-2","trigger":{"action":5,"comment":"","seat":4,"tricks":12,"type":"command"}}}
+SEND|Claim accepted by East|QUEUE|Event.tb=full-tourney-test-0-2|{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}
+SEND|Claim accepted by West|QUEUE|Event.tb=full-tourney-test-0-2|{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by East|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":37,"tableid":"full-tourney-test-0-2","trigger":{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}}}
+RECEIVE|Claim accepted by West|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":38,"tableid":"full-tourney-test-0-2","trigger":{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}}}
+
+# Board 4 Table 1 - Bid to 2H by West
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":41,"tableid":"full-tourney-test-0-1","trigger":{"action":2,"board":{"dealer":1,"number":4,"vul":4},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":1}}}
+SEND|2H by West|QUEUE|Event.tb=full-tourney-test-0-1|{"alert":"","call":8,"seat":1,"type":"auction"}
+RECEIVE|2H by West|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":42,"tableid":"full-tourney-test-0-1","trigger":{"alert":"","call":8,"seat":1,"type":"auction"}}}
+SEND|P by North|QUEUE|Event.tb=full-tourney-test-0-1|{"alert":"","call":38,"seat":2,"type":"auction"}
+RECEIVE|P by North|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":43,"tableid":"full-tourney-test-0-1","trigger":{"alert":"","call":38,"seat":2,"type":"auction"}}}
+SEND|P by East|QUEUE|Event.tb=full-tourney-test-0-1|{"alert":"","call":38,"seat":3,"type":"auction"}
+RECEIVE|P by East|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":44,"tableid":"full-tourney-test-0-1","trigger":{"alert":"","call":38,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=full-tourney-test-0-1|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":45,"tableid":"full-tourney-test-0-1","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+RECEIVE|PHASE TIMER expired|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":46,"tableid":"full-tourney-test-0-1","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 4 Table 1 - Make Opening lead and claim down 2
+SEND|Opening lead by North|QUEUE|Event.tb=full-tourney-test-0-1|{"card":0,"seat":2,"type":"cardplay"}
+RECEIVE|Opening lead by North|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":47,"tableid":"full-tourney-test-0-1","trigger":{"card":0,"seat":2,"type":"cardplay"}}}
+SEND|Claim 6 tricks by West|QUEUE|Event.tb=full-tourney-test-0-1|{"action":5,"comment":"","seat":1,"tricks":6,"type":"command"}
+RECEIVE|Claim 6 tricks by West|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":48,"tableid":"full-tourney-test-0-1","trigger":{"action":5,"comment":"","seat":1,"tricks":6,"type":"command"}}}
+SEND|Claim accepted by North|QUEUE|Event.tb=full-tourney-test-0-1|{"action":6,"number":1,"seat":2,"reject":false,"type":"command"}
+SEND|Claim accepted by South|QUEUE|Event.tb=full-tourney-test-0-1|{"action":6,"number":1,"seat":4,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by North|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":49,"tableid":"full-tourney-test-0-1","trigger":{"action":6,"number":1,"seat":2,"reject":false,"type":"command"}}}
+RECEIVE|Claim accepted by South|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":50,"tableid":"full-tourney-test-0-1","trigger":{"action":6,"number":1,"seat":4,"reject":false,"type":"command"}}}
+
+# Board 4 Table 2 - Bid to 1NT by West
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":39,"tableid":"full-tourney-test-0-2","trigger":{"action":2,"board":{"dealer":1,"number":4,"vul":4},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":1}}}
+SEND|2H by West|QUEUE|Event.tb=full-tourney-test-0-2|{"alert":"","call":5,"seat":1,"type":"auction"}
+RECEIVE|2H by West|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":40,"tableid":"full-tourney-test-0-2","trigger":{"alert":"","call":5,"seat":1,"type":"auction"}}}
+SEND|P by North|QUEUE|Event.tb=full-tourney-test-0-2|{"alert":"","call":38,"seat":2,"type":"auction"}
+RECEIVE|P by North|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":41,"tableid":"full-tourney-test-0-2","trigger":{"alert":"","call":38,"seat":2,"type":"auction"}}}
+SEND|P by East|QUEUE|Event.tb=full-tourney-test-0-2|{"alert":"","call":38,"seat":3,"type":"auction"}
+RECEIVE|P by East|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":42,"tableid":"full-tourney-test-0-2","trigger":{"alert":"","call":38,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=full-tourney-test-0-2|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":43,"tableid":"full-tourney-test-0-2","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+RECEIVE|PHASE TIMER expired|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":44,"tableid":"full-tourney-test-0-2","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 4 Table 2 - Make Opening lead and making 1
+SEND|Opening lead by North|QUEUE|Event.tb=full-tourney-test-0-2|{"card":0,"seat":2,"type":"cardplay"}
+RECEIVE|Opening lead by North|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":45,"tableid":"full-tourney-test-0-2","trigger":{"card":0,"seat":2,"type":"cardplay"}}}
+SEND|Claim 7 tricks by West|QUEUE|Event.tb=full-tourney-test-0-2|{"action":5,"comment":"","seat":1,"tricks":7,"type":"command"}
+RECEIVE|Claim 7 tricks by West|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":46,"tableid":"full-tourney-test-0-2","trigger":{"action":5,"comment":"","seat":1,"tricks":7,"type":"command"}}}
+SEND|Claim accepted by North|QUEUE|Event.tb=full-tourney-test-0-2|{"action":6,"number":1,"seat":2,"reject":false,"type":"command"}
+SEND|Claim accepted by South|QUEUE|Event.tb=full-tourney-test-0-2|{"action":6,"number":1,"seat":4,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by North|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":47,"tableid":"full-tourney-test-0-2","trigger":{"action":6,"number":1,"seat":2,"reject":false,"type":"command"}}}
+RECEIVE|Claim accepted by South|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":48,"tableid":"full-tourney-test-0-2","trigger":{"action":6,"number":1,"seat":4,"reject":false,"type":"command"}}}
+
+# End of round 2
+RECEIVE|EOR message|TOPIC|State.tm=full-tourney-test-0-0|{"notice":5,"round":2}
+RECEIVE|Scorer message|TOPIC|State.sc=full-tourney-test|{"notice":11,"tally":[{"count":3,"iid":1,"raw":200.0,"total":66.66666666666667},{"count":3,"iid":2,"raw":100.0,"total":33.333333333333336},{"count":3,"iid":3,"raw":100.0,"total":33.333333333333336},{"count":3,"iid":4,"raw":200.0,"total":66.66666666666667}]}
+RECEIVE|Scorer message|TOPIC|State.sc=full-tourney-test|{"notice":11,"tally":[{"count":4,"iid":1,"raw":200.0,"total":50.0},{"count":4,"iid":2,"raw":200.0,"total":50.0},{"count":4,"iid":3,"raw":200.0,"total":50.0},{"count":4,"iid":4,"raw":200.0,"total":50.0}]}
+RECEIVE|MOVE message|TOPIC|State.tm=full-tourney-test-0-0|{"bpr":2,"deals":[{"dealer":2,"number":5,"vul":2},{"dealer":3,"number":6,"vul":3}],"notice":3,"round":3,"seating":[{"ewno":3,"nsno":1,"tableno":1},{"ewno":2,"nsno":4,"tableno":2}]}
+RECEIVE|Table 1 MOVE message|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":51,"tableid":"full-tourney-test-0-1","trigger":{"action":4,"round":3,"tableid":"full-tourney-test-0-1","type":"command"}}}
+RECEIVE|Table 2 MOVE message|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":49,"tableid":"full-tourney-test-0-2","trigger":{"action":4,"round":3,"tableid":"full-tourney-test-0-2","type":"command"}}}
+
+# Join messages for round 3
+SEND|JOIN by West|QUEUE|Event.tb=full-tourney-test-0-1|{"action":1,"id":"444","seat":1,"type":"player"}
+RECEIVE|JOIN by West|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":52,"tableid":"full-tourney-test-0-1","trigger":{"action":1,"external":false,"id":"444","seat":1,"type":"player"},"turn":{"message":"No active deal","phase":0,"status":0}}}
+SEND|JOIN by East|QUEUE|Event.tb=full-tourney-test-0-1|{"action":1,"id":"472","seat":3,"type":"player"}
+RECEIVE|JOIN by East|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":53,"tableid":"full-tourney-test-0-1","trigger":{"action":1,"external":false,"id":"472","seat":3,"type":"player"},"turn":{"message":"No active deal","phase":0,"status":0}}}
+SEND|JOIN by North|QUEUE|Event.tb=full-tourney-test-0-1|{"action":1,"id":"233","seat":2,"type":"player"}
+RECEIVE|JOIN by North|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":54,"tableid":"full-tourney-test-0-1","trigger":{"action":1,"external":false,"id":"233","seat":2,"type":"player"},"turn":{"message":"No active deal","phase":0,"status":0}}}
+SEND|JOIN by South|QUEUE|Event.tb=full-tourney-test-0-1|{"action":1,"id":"79","seat":4,"type":"player"}
+RECEIVE|JOIN by South|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":55,"tableid":"full-tourney-test-0-1","trigger":{"action":1,"external":false,"id":"79","seat":4,"type":"player"},"turn":{"message":"No active deal","phase":0,"status":0}}}
+SEND|JOIN by West|QUEUE|Event.tb=full-tourney-test-0-2|{"action":1,"id":"411","seat":1,"type":"player"}
+RECEIVE|JOIN by West|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":50,"tableid":"full-tourney-test-0-2","trigger":{"action":1,"external":false,"id":"411","seat":1,"type":"player"},"turn":{"message":"No active deal","phase":0,"status":0}}}
+SEND|JOIN by East|QUEUE|Event.tb=full-tourney-test-0-2|{"action":1,"id":"292","seat":3,"type":"player"}
+RECEIVE|JOIN by East|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":51,"tableid":"full-tourney-test-0-2","trigger":{"action":1,"external":false,"id":"292","seat":3,"type":"player"},"turn":{"message":"No active deal","phase":0,"status":0}}}
+
+# Board 5 Table 1 - Bid to 4H by North
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":56,"tableid":"full-tourney-test-0-1","trigger":{"action":2,"board":{"dealer":2,"number":5,"vul":2},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":2}}}
+SEND|4H by North|QUEUE|Event.tb=full-tourney-test-0-1|{"alert":"","call":18,"seat":2,"type":"auction"}
+RECEIVE|4H by North|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":57,"tableid":"full-tourney-test-0-1","trigger":{"alert":"","call":18,"seat":2,"type":"auction"}}}
+SEND|P by East|QUEUE|Event.tb=full-tourney-test-0-1|{"alert":"","call":38,"seat":3,"type":"auction"}
+RECEIVE|P by East|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":58,"tableid":"full-tourney-test-0-1","trigger":{"alert":"","call":38,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=full-tourney-test-0-1|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":59,"tableid":"full-tourney-test-0-1","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=full-tourney-test-0-1|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":60,"tableid":"full-tourney-test-0-1","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+RECEIVE|PHASE TIMER canceled|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":61,"tableid":"full-tourney-test-0-1","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 5 Table 1 - Make Opening lead and claim making 4
+SEND|Opening lead by East|QUEUE|Event.tb=full-tourney-test-0-1|{"card":1,"seat":3,"type":"cardplay"}
+RECEIVE|Opening lead by East|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":62,"tableid":"full-tourney-test-0-1","trigger":{"card":1,"seat":3,"type":"cardplay"}}}
+SEND|Claim 10 tricks by North|QUEUE|Event.tb=full-tourney-test-0-1|{"action":5,"comment":"","seat":2,"tricks":10,"type":"command"}
+RECEIVE|Claim 10 tricks by North|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":63,"tableid":"full-tourney-test-0-1","trigger":{"action":5,"comment":"","seat":2,"tricks":10,"type":"command"}}}
+SEND|Claim accepted by East|QUEUE|Event.tb=full-tourney-test-0-1|{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}
+SEND|Claim accepted by West|QUEUE|Event.tb=full-tourney-test-0-1|{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by East|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":64,"tableid":"full-tourney-test-0-1","trigger":{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}}}
+RECEIVE|Claim accepted by West|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":65,"tableid":"full-tourney-test-0-1","trigger":{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}}}
+
+# Board 5 Table 2 - Bid to 1NT by North
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":52,"tableid":"full-tourney-test-0-2","trigger":{"action":2,"board":{"dealer":2,"number":5,"vul":2},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":2}}}
+SEND|1N by North|QUEUE|Event.tb=full-tourney-test-0-2|{"alert":"","call":5,"seat":2,"type":"auction"}
+RECEIVE|1N by North|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":53,"tableid":"full-tourney-test-0-2","trigger":{"alert":"","call":5,"seat":2,"type":"auction"}}}
+SEND|P by East|QUEUE|Event.tb=full-tourney-test-0-2|{"alert":"","call":38,"seat":3,"type":"auction"}
+RECEIVE|P by East|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":54,"tableid":"full-tourney-test-0-2","trigger":{"alert":"","call":38,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=full-tourney-test-0-2|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":55,"tableid":"full-tourney-test-0-2","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=full-tourney-test-0-2|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":56,"tableid":"full-tourney-test-0-2","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+RECEIVE|PHASE TIMER canceled|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":57,"tableid":"full-tourney-test-0-2","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 5 Table 2 - Make Opening lead and claim down 1
+SEND|Opening lead by East|QUEUE|Event.tb=full-tourney-test-0-2|{"card":1,"seat":3,"type":"cardplay"}
+RECEIVE|Opening lead by East|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":58,"tableid":"full-tourney-test-0-2","trigger":{"card":1,"seat":3,"type":"cardplay"}}}
+SEND|Claim 6 tricks by North|QUEUE|Event.tb=full-tourney-test-0-2|{"action":5,"comment":"","seat":2,"tricks":6,"type":"command"}
+RECEIVE|Claim 6 tricks by North|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":59,"tableid":"full-tourney-test-0-2","trigger":{"action":5,"comment":"","seat":2,"tricks":6,"type":"command"}}}
+SEND|Claim accepted by East|QUEUE|Event.tb=full-tourney-test-0-2|{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}
+SEND|Claim accepted by West|QUEUE|Event.tb=full-tourney-test-0-2|{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by East|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":60,"tableid":"full-tourney-test-0-2","trigger":{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}}}
+RECEIVE|Claim accepted by West|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":61,"tableid":"full-tourney-test-0-2","trigger":{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}}}
+
+# Board 6 Table 1 - Bid to 3NT by East
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":66,"tableid":"full-tourney-test-0-1","trigger":{"action":2,"board":{"dealer":3,"number":6,"vul":3},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":3}}}
+SEND|3N by East|QUEUE|Event.tb=full-tourney-test-0-1|{"alert":"","call":15,"seat":3,"type":"auction"}
+RECEIVE|3N by East|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":67,"tableid":"full-tourney-test-0-1","trigger":{"alert":"","call":15,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=full-tourney-test-0-1|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":68,"tableid":"full-tourney-test-0-1","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=full-tourney-test-0-1|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":69,"tableid":"full-tourney-test-0-1","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+SEND|P by North|QUEUE|Event.tb=full-tourney-test-0-1|{"alert":"","call":38,"seat":2,"type":"auction"}
+RECEIVE|P by North|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":70,"tableid":"full-tourney-test-0-1","trigger":{"alert":"","call":38,"seat":2,"type":"auction"}}}
+RECEIVE|PHASE TIMER expired|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":71,"tableid":"full-tourney-test-0-1","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 6 Table 1 - Make Opening lead and claim making 4
+SEND|Opening lead by South|QUEUE|Event.tb=full-tourney-test-0-1|{"card":2,"seat":4,"type":"cardplay"}
+RECEIVE|Opening lead by South|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":72,"tableid":"full-tourney-test-0-1","trigger":{"card":2,"seat":4,"type":"cardplay"}}}
+SEND|Claim 10 tricks by East|QUEUE|Event.tb=full-tourney-test-0-1|{"action":5,"comment":"","seat":3,"tricks":10,"type":"command"}
+RECEIVE|Claim 10 tricks by East|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":73,"tableid":"full-tourney-test-0-1","trigger":{"action":5,"comment":"","seat":3,"tricks":10,"type":"command"}}}
+SEND|Claim accepted by North|QUEUE|Event.tb=full-tourney-test-0-1|{"action":6,"number":1,"seat":2,"reject":false,"type":"command"}
+SEND|Claim accepted by South|QUEUE|Event.tb=full-tourney-test-0-1|{"action":6,"number":1,"seat":4,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by North|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":74,"tableid":"full-tourney-test-0-1","trigger":{"action":6,"number":1,"seat":2,"reject":false,"type":"command"}}}
+RECEIVE|Claim accepted by South|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"seqnum":75,"tableid":"full-tourney-test-0-1","trigger":{"action":6,"number":1,"seat":4,"reject":false,"type":"command"}}}
+
+# Board 6 Table 2 - Bid to 3NT by East
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":62,"tableid":"full-tourney-test-0-2","trigger":{"action":2,"board":{"dealer":3,"number":6,"vul":3},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":3}}}
+SEND|3N by East|QUEUE|Event.tb=full-tourney-test-0-2|{"alert":"","call":15,"seat":3,"type":"auction"}
+RECEIVE|3N by East|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":63,"tableid":"full-tourney-test-0-2","trigger":{"alert":"","call":15,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=full-tourney-test-0-2|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":64,"tableid":"full-tourney-test-0-2","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=full-tourney-test-0-2|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":65,"tableid":"full-tourney-test-0-2","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+SEND|P by North|QUEUE|Event.tb=full-tourney-test-0-2|{"alert":"","call":38,"seat":2,"type":"auction"}
+RECEIVE|P by North|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":66,"tableid":"full-tourney-test-0-2","trigger":{"alert":"","call":38,"seat":2,"type":"auction"}}}
+RECEIVE|PHASE TIMER expired|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":67,"tableid":"full-tourney-test-0-2","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 6 Table 2 - Make Opening lead and claim making 5
+SEND|Opening lead by North|QUEUE|Event.tb=full-tourney-test-0-2|{"card":2,"seat":4,"type":"cardplay"}
+RECEIVE|Opening lead by North|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":68,"tableid":"full-tourney-test-0-2","trigger":{"card":2,"seat":4,"type":"cardplay"}}}
+SEND|Claim 11 tricks by East|QUEUE|Event.tb=full-tourney-test-0-2|{"action":5,"comment":"","seat":3,"tricks":11,"type":"command"}
+RECEIVE|Claim 11 tricks by East|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":69,"tableid":"full-tourney-test-0-2","trigger":{"action":5,"comment":"","seat":3,"tricks":11,"type":"command"}}}
+SEND|Claim accepted by North|QUEUE|Event.tb=full-tourney-test-0-2|{"action":6,"number":1,"seat":2,"reject":false,"type":"command"}
+SEND|Claim accepted by South|QUEUE|Event.tb=full-tourney-test-0-2|{"action":6,"number":1,"seat":4,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by North|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":70,"tableid":"full-tourney-test-0-2","trigger":{"action":6,"number":1,"seat":2,"reject":false,"type":"command"}}}
+RECEIVE|Claim accepted by South|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"seqnum":71,"tableid":"full-tourney-test-0-2","trigger":{"action":6,"number":1,"seat":4,"reject":false,"type":"command"}}}
+
+# End of tournament
+RECEIVE|EOT message|TOPIC|State.tm=full-tourney-test-0-0|{"notice":4,"round":4}
+RECEIVE|Scorer message|TOPIC|State.sc=full-tourney-test|{"notice":11,"tally":[{"count":5,"iid":1,"raw":300.0,"total":60.0},{"count":5,"iid":2,"raw":300.0,"total":60.0},{"count":5,"iid":3,"raw":200.0,"total":40.0},{"count":5,"iid":4,"raw":200.0,"total":40.0}]}
+RECEIVE|Scorer message|TOPIC|State.sc=full-tourney-test|{"notice":11,"tally":[{"count":6,"iid":1,"raw":400.0,"total":66.66666666666667},{"count":6,"iid":2,"raw":400.0,"total":66.66666666666667},{"count":6,"iid":3,"raw":200.0,"total":33.333333333333336},{"count":6,"iid":4,"raw":200.0,"total":33.333333333333336}]}
+RECEIVE|Scorer message|TOPIC|State.sc=full-tourney-test|{"notice":13,"tally":[{"count":6,"iid":1,"raw":400.0,"total":66.66666666666667},{"count":6,"iid":2,"raw":400.0,"total":66.66666666666667},{"count":6,"iid":3,"raw":200.0,"total":33.333333333333336},{"count":6,"iid":4,"raw":200.0,"total":33.333333333333336}]}
+RECEIVE|Table 1 EOT message|TOPIC|State.tb=full-tourney-test-0-1|{"table":{"trigger":{"action":7}}}
+RECEIVE|Table 2 EOT message|TOPIC|State.tb=full-tourney-test-0-2|{"table":{"trigger":{"action":7}}}
+
+TEST|One-board Daylong Tourney 
+
+# Register a table and get join messages from robots
+SEND|Register a table|QUEUE|Event.tm=one-board-daylong-test-0-0|{"event":8,"action":1,"playerid":"79","corrid":"15","system":1,"replyto":"/queue/SessionTestRegistered"}
+
+RECEIVE|Confirm registration|QUEUE|SessionTestRegistered|{"action":1,"corrid":"15","event":8,"playerid":"79","tableid":"one-board-daylong-test-0-1","replyto":"/queue/SessionTestRegistered","status":true}
+RECEIVE|Register state dump|TOPIC|State.tm=one-board-daylong-test-0-0|{"notice":18,"tables":[{"playerid":"79","tableno":1}],"trigger":{"event":8,"action":1}}
+RECEIVE|Startup state dump|TOPIC|State.tb=one-board-daylong-test-0-1|{"table":{"seqnum":1,"trigger":{"action":0,"type":"command"}}}
+
+# Send redundant RESUME by South to make sure it's ignored
+SEND|JOIN by South|QUEUE|Event.tm=one-board-daylong-test-0-0|{"event":8,"action":3,"playerid":"79","corrid":"15","replyto":"/queue/SessionTestRegistered"}
+RECEIVE|Confirm resume|QUEUE|SessionTestRegistered|{"action":3,"corrid":"15","event":8,"playerid":"79","tableid":"one-board-daylong-test-0-1","status":true}
+RECEIVE|Register state dump|TOPIC|State.tm=one-board-daylong-test-0-0|{"notice":18,"tables":[{"playerid":"79","tableno":1}],"trigger":{"event":8,"action":3}}
+
+# Register two more tables now to save time
+SEND|Register a table|QUEUE|Event.tm=one-board-daylong-test-0-0|{"event":8,"action":1,"playerid":"80","corrid":"15","replyto":"/queue/SessionTestRegistered"}
+SEND|Register a table|QUEUE|Event.tm=one-board-daylong-test-0-0|{"event":8,"action":1,"playerid":"81","corrid":"15","replyto":"/queue/SessionTestRegistered"}
+
+RECEIVE|JOIN by North|TOPIC|State.tb=one-board-daylong-test-0-1|{"table":{"seqnum":2,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+RECEIVE|JOIN by East|TOPIC|State.tb=one-board-daylong-test-0-1|{"table":{"seqnum":3,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+RECEIVE|JOIN by West|TOPIC|State.tb=one-board-daylong-test-0-1|{"table":{"seqnum":4,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+
+SEND|Request diagnostics|QUEUE|Event.tb=one-board-daylong-test-0-1|{"type":"diagnostics","robotsystem":1,"replyto":"SessionTestDiagnostics"}
+RECEIVE|Show diagnostics|QUEUE|SessionTestDiagnostics|{"robotsystem":1}
+
+# Join South
+SEND|JOIN by South|QUEUE|Event.tb=one-board-daylong-test-0-1|{"action":1,"id":"79","seat":4,"type":"player"}
+RECEIVE|JOIN by South|TOPIC|State.tb=one-board-daylong-test-0-1|{"table":{"seqnum":5,"trigger":{"action":1,"external":false,"id":"79","seat":4,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+
+# Register a second table and get join messages from robots
+RECEIVE|Confirm registration|QUEUE|SessionTestRegistered|{"action":1,"corrid":"15","event":8,"playerid":"80","tableid":"one-board-daylong-test-0-2","replyto":"/queue/SessionTestRegistered","status":true}
+RECEIVE|Register state dump|TOPIC|State.tm=one-board-daylong-test-0-0|{"notice":18,"tables":[{"playerid":"79","tableno":1},{"playerid":"80","tableno":2}],"trigger":{"event":8,"action":1}}
+RECEIVE|Startup state dump|TOPIC|State.tb=one-board-daylong-test-0-2|{"table":{"seqnum":1,"trigger":{"action":0,"type":"command"}}}
+
+RECEIVE|JOIN by North|TOPIC|State.tb=one-board-daylong-test-0-2|{"table":{"seqnum":2,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+RECEIVE|JOIN by East|TOPIC|State.tb=one-board-daylong-test-0-2|{"table":{"seqnum":3,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+RECEIVE|JOIN by West|TOPIC|State.tb=one-board-daylong-test-0-2|{"table":{"seqnum":4,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+
+SEND|Request diagnostics|QUEUE|Event.tb=one-board-daylong-test-0-2|{"type":"diagnostics","robotsystem":1,"replyto":"SessionTestDiagnostics"}
+RECEIVE|Show diagnostics|QUEUE|SessionTestDiagnostics|{"robotsystem":0}
+
+# Join South
+SEND|JOIN by South|QUEUE|Event.tb=one-board-daylong-test-0-2|{"action":1,"id":"80","seat":4,"type":"player"}
+RECEIVE|JOIN by South|TOPIC|State.tb=one-board-daylong-test-0-2|{"table":{"seqnum":5,"trigger":{"action":1,"external":false,"id":"80","seat":4,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+
+# Register a third table and get join messages from robots
+RECEIVE|Confirm registration|QUEUE|SessionTestRegistered|{"action":1,"corrid":"15","event":8,"playerid":"81","tableid":"one-board-daylong-test-0-3","replyto":"/queue/SessionTestRegistered","status":true}
+RECEIVE|Register state dump|TOPIC|State.tm=one-board-daylong-test-0-0|{"notice":18,"tables":[{"playerid":"79","tableno":1},{"playerid":"80","tableno":2},{"playerid":"81","tableno":3}],"trigger":{"event":8,"action":1}}
+RECEIVE|Startup state dump|TOPIC|State.tb=one-board-daylong-test-0-3|{"table":{"seqnum":1,"trigger":{"action":0,"type":"command"}}}
+
+RECEIVE|JOIN by North|TOPIC|State.tb=one-board-daylong-test-0-3|{"table":{"seqnum":2,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+RECEIVE|JOIN by East|TOPIC|State.tb=one-board-daylong-test-0-3|{"table":{"seqnum":3,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+RECEIVE|JOIN by West|TOPIC|State.tb=one-board-daylong-test-0-3|{"table":{"seqnum":4,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+
+# Join South
+SEND|JOIN by South|QUEUE|Event.tb=one-board-daylong-test-0-3|{"action":1,"id":"81","seat":4,"type":"player"}
+RECEIVE|JOIN by South|TOPIC|State.tb=one-board-daylong-test-0-3|{"table":{"seqnum":5,"trigger":{"action":1,"external":false,"id":"81","seat":4,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+
+# Board 1 Table 1 - Bid to 5C by North
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=one-board-daylong-test-0-1|{"table":{"seqnum":6,"tableid":"one-board-daylong-test-0-1","trigger":{"action":2,"board":{"dealer":2,"number":1,"vul":1},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":2}}}
+SEND|5C by North|QUEUE|Event.tb=one-board-daylong-test-0-1|{"alert":"","call":21,"seat":2,"type":"auction"}
+RECEIVE|5C by North|TOPIC|State.tb=one-board-daylong-test-0-1|{"table":{"seqnum":7,"tableid":"one-board-daylong-test-0-1","trigger":{"alert":"","call":21,"seat":2,"type":"auction"}}}
+SEND|P by East|QUEUE|Event.tb=one-board-daylong-test-0-1|{"alert":"","call":38,"seat":3,"type":"auction"}
+RECEIVE|P by East|TOPIC|State.tb=one-board-daylong-test-0-1|{"table":{"seqnum":8,"tableid":"one-board-daylong-test-0-1","trigger":{"alert":"","call":38,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=one-board-daylong-test-0-1|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=one-board-daylong-test-0-1|{"table":{"seqnum":9,"tableid":"one-board-daylong-test-0-1","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=one-board-daylong-test-0-1|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=one-board-daylong-test-0-1|{"table":{"seqnum":10,"tableid":"one-board-daylong-test-0-1","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+RECEIVE|PHASE TIMER canceled|TOPIC|State.tb=one-board-daylong-test-0-1|{"table":{"seqnum":11,"tableid":"one-board-daylong-test-0-1","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 1 Table 1 - Make Opening lead and claim making 5
+SEND|Opening lead by East|QUEUE|Event.tb=one-board-daylong-test-0-1|{"card":1,"seat":3,"type":"cardplay"}
+RECEIVE|Opening lead by East|TOPIC|State.tb=one-board-daylong-test-0-1|{"table":{"seqnum":12,"tableid":"one-board-daylong-test-0-1","trigger":{"card":1,"seat":3,"type":"cardplay"}}}
+SEND|Claim 11 tricks by North|QUEUE|Event.tb=one-board-daylong-test-0-1|{"action":5,"comment":"Marked double squeeze","seat":2,"tricks":11,"type":"command"}
+RECEIVE|Claim 11 tricks by North|TOPIC|State.tb=one-board-daylong-test-0-1|{"table":{"seqnum":13,"tableid":"one-board-daylong-test-0-1","trigger":{"action":5,"comment":"Marked double squeeze","seat":2,"tricks":11,"type":"command"}}}
+SEND|Claim accepted by East|QUEUE|Event.tb=one-board-daylong-test-0-1|{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}
+SEND|Claim accepted by West|QUEUE|Event.tb=one-board-daylong-test-0-1|{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by East|TOPIC|State.tb=one-board-daylong-test-0-1|{"table":{"seqnum":14,"tableid":"one-board-daylong-test-0-1","trigger":{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}}}
+RECEIVE|Claim accepted by West|TOPIC|State.tb=one-board-daylong-test-0-1|{"table":{"seqnum":15,"tableid":"one-board-daylong-test-0-1","trigger":{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}}}
+RECEIVE|UPDATE state dump|TOPIC|State.tm=one-board-daylong-test-0-0|{"notice":18,"trigger":{"board":1,"event":2,"tableno":1}}
+
+# Board 1 Table 2 - Bid to 5C by North
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=one-board-daylong-test-0-2|{"table":{"seqnum":6,"tableid":"one-board-daylong-test-0-2","trigger":{"action":2,"board":{"dealer":2,"number":1,"vul":1},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":2}}}
+SEND|5C by North|QUEUE|Event.tb=one-board-daylong-test-0-2|{"alert":"","call":21,"seat":2,"type":"auction"}
+RECEIVE|5C by North|TOPIC|State.tb=one-board-daylong-test-0-2|{"table":{"seqnum":7,"tableid":"one-board-daylong-test-0-2","trigger":{"alert":"","call":21,"seat":2,"type":"auction"}}}
+SEND|P by East|QUEUE|Event.tb=one-board-daylong-test-0-2|{"alert":"","call":38,"seat":3,"type":"auction"}
+RECEIVE|P by East|TOPIC|State.tb=one-board-daylong-test-0-2|{"table":{"seqnum":8,"tableid":"one-board-daylong-test-0-2","trigger":{"alert":"","call":38,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=one-board-daylong-test-0-2|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=one-board-daylong-test-0-2|{"table":{"seqnum":9,"tableid":"one-board-daylong-test-0-2","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=one-board-daylong-test-0-2|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=one-board-daylong-test-0-2|{"table":{"seqnum":10,"tableid":"one-board-daylong-test-0-2","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+RECEIVE|PHASE TIMER canceled|TOPIC|State.tb=one-board-daylong-test-0-2|{"table":{"seqnum":11,"tableid":"one-board-daylong-test-0-2","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 1 Table 2 - Don't finish play
+SEND|Opening lead by East|QUEUE|Event.tb=one-board-daylong-test-0-2|{"card":1,"seat":3,"type":"cardplay"}
+RECEIVE|Opening lead by East|TOPIC|State.tb=one-board-daylong-test-0-2|{"table":{"seqnum":12,"tableid":"one-board-daylong-test-0-2","trigger":{"card":1,"seat":3,"type":"cardplay"}}}
+
+# Board 1 Table 3 - Bid to 5C by North
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=one-board-daylong-test-0-3|{"table":{"seqnum":6,"tableid":"one-board-daylong-test-0-3","trigger":{"action":2,"board":{"dealer":2,"number":1,"vul":1},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":2}}}
+SEND|5C by North|QUEUE|Event.tb=one-board-daylong-test-0-3|{"alert":"","call":21,"seat":2,"type":"auction"}
+RECEIVE|5C by North|TOPIC|State.tb=one-board-daylong-test-0-3|{"table":{"seqnum":7,"tableid":"one-board-daylong-test-0-3","trigger":{"alert":"","call":21,"seat":2,"type":"auction"}}}
+SEND|P by East|QUEUE|Event.tb=one-board-daylong-test-0-3|{"alert":"","call":38,"seat":3,"type":"auction"}
+RECEIVE|P by East|TOPIC|State.tb=one-board-daylong-test-0-3|{"table":{"seqnum":8,"tableid":"one-board-daylong-test-0-3","trigger":{"alert":"","call":38,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=one-board-daylong-test-0-3|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=one-board-daylong-test-0-3|{"table":{"seqnum":9,"tableid":"one-board-daylong-test-0-3","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=one-board-daylong-test-0-3|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=one-board-daylong-test-0-3|{"table":{"seqnum":10,"tableid":"one-board-daylong-test-0-3","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+RECEIVE|PHASE TIMER canceled|TOPIC|State.tb=one-board-daylong-test-0-3|{"table":{"seqnum":11,"tableid":"one-board-daylong-test-0-3","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Pause table 3 before play begins
+SEND|PAUSE a table|QUEUE|Event.tm=one-board-daylong-test-0-0|{"corrid":"15","event":8,"action":2,"playerid":"81","replyto":"/queue/SessionTestRegistered"}
+RECEIVE|Confirm PAUSE|QUEUE|SessionTestRegistered|{"action":2,"corrid":"15","event":8,"playerid":"81","replyto":"/queue/SessionTestRegistered","status":true}
+RECEIVE|PAUSE state dump|TOPIC|State.tm=one-board-daylong-test-0-0|{"notice":18,"trigger":{"event":8,"action":2}}
+
+# End of round for Table 1
+RECEIVE|Table 1 EOT message|TOPIC|State.tb=one-board-daylong-test-0-1|{"table":{"tableid":"one-board-daylong-test-0-1","trigger":{"action":7,"tableid":"one-board-daylong-test-0-1","roster":[{"count":1,"iid":1,"pairno":1,"player1":"Robot:2","player2":"79","raw":50.0,"total":50.0}],"type":"command"}}}
+RECEIVE|Recorder EOR message - Table 1|TOPIC|State.sc=one-board-daylong-test|{"action":5,"corrid":"25","id":"one-board-daylong-test-0","roster":[{"count":1,"iid":1,"pairno":1,"player1":"Robot:2","player2":"79","raw":50.0,"total":50.0}],"round":2,"secno":0,"type":"DManager"}
+
+# Send Timeout
+SEND|Force Timeout|QUEUE|Event.tm=one-board-daylong-test-0-0|{"event":8,"action":4}
+RECEIVE|Timeout Section|TOPIC|State.tm=one-board-daylong-test-0-0|{"action":13,"external":true,"notice":10,"type":"timer"}
+RECEIVE|Timeout Table 2|TOPIC|State.tb=one-board-daylong-test-0-2|{"table":{"tableid":"one-board-daylong-test-0-2","trigger":{"action":13,"external":true,"notice":10,"type":"timer"}}}
+RECEIVE|Section state dump|TOPIC|State.tm=one-board-daylong-test-0-0|{"notice":18,"trigger":{"event":8,"action":4}}
+
+# End of round for Table 2 - unfinished board scored
+RECEIVE|Table 2 EOT message|TOPIC|State.tb=one-board-daylong-test-0-2|{"table":{"tableid":"one-board-daylong-test-0-2","trigger":{"action":7,"roster":[{"count":1,"iid":3,"pairno":3,"player1":"Robot:2","player2":"80","raw":0.0,"total":0.0}],"tableid":"one-board-daylong-test-0-2","type":"command"}}}
+RECEIVE|EOR state dump|TOPIC|State.tm=one-board-daylong-test-0-0|{"notice":18,"trigger":{"board":1,"event":2,"tableno":2}}
+RECEIVE|Recorder EOR message - Table 2|TOPIC|State.sc=one-board-daylong-test|{"action":5,"corrid":"25","id":"one-board-daylong-test-0","roster":[{"count":1,"iid":3,"pairno":3,"player1":"Robot:2","player2":"80","raw":0.0,"total":0.0}],"round":2,"secno":0,"type":"DManager"}
+
+# End of round for Table 3 (no state dump)
+RECEIVE|Recorder EOR message - Table 3|TOPIC|State.sc=one-board-daylong-test|{"action":5,"corrid":"25","id":"one-board-daylong-test-0","roster":[{"count":1,"iid":5,"pairno":5,"player1":"Robot:2","player2":"81","raw":0.0,"total":0.0}],"round":2,"secno":0,"type":"DManager"}
+RECEIVE|EOT state dump|TOPIC|State.tm=one-board-daylong-test-0-0|{"notice":18,"trigger":{"event":8,"action":5}}
+
+# EOT Sent to Recorder
+RECEIVE|Recorder - Final|TOPIC|State.sc=one-board-daylong-test|{"notice":4,"corrid":"25","id":"one-board-daylong-test-0","roster":[{"count":1,"iid":1,"raw":50.0,"total":50.0},{"count":0,"iid":2,"raw":0.0,"total":0.0},{"count":1,"iid":3,"raw":0.0,"total":0.0},{"count":0,"iid":4,"raw":0.0,"total":0.0},{"count":1,"iid":5,"raw":0.0,"total":0.0},{"count":0,"iid":6,"raw":0.0,"total":0.0}],"round":2,"secno":0}
+RECEIVE|Final message|TOPIC|State.tm=one-board-daylong-test-0-0|{"notice":8}
+
+TEST|Two-board Daylong Tourney 
+
+# Register a table and get join messages from robots
+SEND|Register a table|QUEUE|Event.tm=two-board-daylong-test-0-0|{"event":8,"action":1,"playerid":"79","corrid":"15","replyto":"/queue/SessionTestRegistered"}
+SEND|Register a table|QUEUE|Event.tm=two-board-daylong-test-0-0|{"event":8,"action":1,"playerid":"80","corrid":"15","replyto":"/queue/SessionTestRegistered"}
+SEND|Register a table|QUEUE|Event.tm=two-board-daylong-test-0-0|{"event":8,"action":1,"playerid":"81","corrid":"15","replyto":"/queue/SessionTestRegistered"}
+
+RECEIVE|Confirm registration|QUEUE|SessionTestRegistered|{"action":1,"corrid":"15","event":8,"playerid":"79","replyto":"/queue/SessionTestRegistered","status":true}
+RECEIVE|Register state dump|TOPIC|State.tm=two-board-daylong-test-0-0|{"notice":18,"tables":[{"playerid":"79","tableno":1}],"trigger":{"event":8,"action":1}}
+RECEIVE|Startup state dump|TOPIC|State.tb=two-board-daylong-test-0-1|{"table":{"seqnum":1,"trigger":{"action":0,"type":"command"}}}
+
+# Confirm result if unplayed
+SEND|Request diagnostics|QUEUE|Event.tb=two-board-daylong-test-0-1|{"type":"diagnostics","state":1,"replyto":"SessionTestDiagnostics"}
+RECEIVE|Show diagnostics|QUEUE|SessionTestDiagnostics|{"resultIfUnplayed":6}
+
+RECEIVE|JOIN by North|TOPIC|State.tb=two-board-daylong-test-0-1|{"table":{"seqnum":2,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+RECEIVE|JOIN by East|TOPIC|State.tb=two-board-daylong-test-0-1|{"table":{"seqnum":3,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+RECEIVE|JOIN by West|TOPIC|State.tb=two-board-daylong-test-0-1|{"table":{"seqnum":4,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+
+# Join South
+SEND|JOIN by South|QUEUE|Event.tb=two-board-daylong-test-0-1|{"action":1,"id":"79","seat":4,"type":"player"}
+RECEIVE|JOIN by South|TOPIC|State.tb=two-board-daylong-test-0-1|{"table":{"seqnum":5,"trigger":{"action":1,"external":false,"id":"79","seat":4,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+
+# Register a second table and get join messages from robots
+RECEIVE|Confirm registration|QUEUE|SessionTestRegistered|{"action":1,"corrid":"15","event":8,"playerid":"80","replyto":"/queue/SessionTestRegistered","status":true}
+RECEIVE|Register state dump|TOPIC|State.tm=two-board-daylong-test-0-0|{"notice":18,"tables":[{"playerid":"79","tableno":1},{"playerid":"80","tableno":2}],"trigger":{"event":8,"action":1}}
+RECEIVE|Startup state dump|TOPIC|State.tb=two-board-daylong-test-0-2|{"table":{"seqnum":1,"trigger":{"action":0,"type":"command"}}}
+
+RECEIVE|JOIN by North|TOPIC|State.tb=two-board-daylong-test-0-2|{"table":{"seqnum":2,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+RECEIVE|JOIN by East|TOPIC|State.tb=two-board-daylong-test-0-2|{"table":{"seqnum":3,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+RECEIVE|JOIN by West|TOPIC|State.tb=two-board-daylong-test-0-2|{"table":{"seqnum":4,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+
+# Join South
+SEND|JOIN by South|QUEUE|Event.tb=two-board-daylong-test-0-2|{"action":1,"id":"80","seat":4,"type":"player"}
+RECEIVE|JOIN by South|TOPIC|State.tb=two-board-daylong-test-0-2|{"table":{"seqnum":5,"trigger":{"action":1,"external":false,"id":"80","seat":4,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+
+# Register a third table and get join messages from robots
+RECEIVE|Confirm registration|QUEUE|SessionTestRegistered|{"action":1,"corrid":"15","event":8,"playerid":"81","replyto":"/queue/SessionTestRegistered","status":true}
+RECEIVE|Register state dump|TOPIC|State.tm=two-board-daylong-test-0-0|{"notice":18,"tables":[{"playerid":"79","tableno":1},{"playerid":"80","tableno":2},{"playerid":"81","tableno":3}],"trigger":{"event":8,"action":1}}
+RECEIVE|Startup state dump|TOPIC|State.tb=two-board-daylong-test-0-3|{"table":{"seqnum":1,"trigger":{"action":0,"type":"command"}}}
+
+RECEIVE|JOIN by North|TOPIC|State.tb=two-board-daylong-test-0-3|{"table":{"seqnum":2,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+RECEIVE|JOIN by East|TOPIC|State.tb=two-board-daylong-test-0-3|{"table":{"seqnum":3,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+RECEIVE|JOIN by West|TOPIC|State.tb=two-board-daylong-test-0-3|{"table":{"seqnum":4,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+
+# Join South
+SEND|JOIN by South|QUEUE|Event.tb=two-board-daylong-test-0-3|{"action":1,"id":"81","seat":4,"type":"player"}
+RECEIVE|JOIN by South|TOPIC|State.tb=two-board-daylong-test-0-3|{"table":{"seqnum":5,"trigger":{"action":1,"external":false,"id":"81","seat":4,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+
+# Board 1 Table 1 - Bid to 5C by North
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=two-board-daylong-test-0-1|{"table":{"seqnum":6,"tableid":"two-board-daylong-test-0-1","trigger":{"action":2,"board":{"dealer":2,"number":1,"vul":1},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":2}}}
+SEND|5C by North|QUEUE|Event.tb=two-board-daylong-test-0-1|{"alert":"","call":21,"seat":2,"type":"auction"}
+RECEIVE|5C by North|TOPIC|State.tb=two-board-daylong-test-0-1|{"table":{"seqnum":7,"tableid":"two-board-daylong-test-0-1","trigger":{"alert":"","call":21,"seat":2,"type":"auction"}}}
+SEND|P by East|QUEUE|Event.tb=two-board-daylong-test-0-1|{"alert":"","call":38,"seat":3,"type":"auction"}
+RECEIVE|P by East|TOPIC|State.tb=two-board-daylong-test-0-1|{"table":{"seqnum":8,"tableid":"two-board-daylong-test-0-1","trigger":{"alert":"","call":38,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=two-board-daylong-test-0-1|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=two-board-daylong-test-0-1|{"table":{"seqnum":9,"tableid":"two-board-daylong-test-0-1","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=two-board-daylong-test-0-1|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=two-board-daylong-test-0-1|{"table":{"seqnum":10,"tableid":"two-board-daylong-test-0-1","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+RECEIVE|PHASE TIMER canceled|TOPIC|State.tb=two-board-daylong-test-0-1|{"table":{"seqnum":11,"tableid":"two-board-daylong-test-0-1","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 1 Table 1 - Make Opening lead and claim making 5
+SEND|Opening lead by East|QUEUE|Event.tb=two-board-daylong-test-0-1|{"card":1,"seat":3,"type":"cardplay"}
+RECEIVE|Opening lead by East|TOPIC|State.tb=two-board-daylong-test-0-1|{"table":{"seqnum":12,"tableid":"two-board-daylong-test-0-1","trigger":{"card":1,"seat":3,"type":"cardplay"}}}
+SEND|Claim 11 tricks by North|QUEUE|Event.tb=two-board-daylong-test-0-1|{"action":5,"comment":"Marked double squeeze","seat":2,"tricks":11,"type":"command"}
+RECEIVE|Claim 11 tricks by North|TOPIC|State.tb=two-board-daylong-test-0-1|{"table":{"seqnum":13,"tableid":"two-board-daylong-test-0-1","trigger":{"action":5,"comment":"Marked double squeeze","seat":2,"tricks":11,"type":"command"}}}
+SEND|Claim accepted by East|QUEUE|Event.tb=two-board-daylong-test-0-1|{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}
+SEND|Claim accepted by West|QUEUE|Event.tb=two-board-daylong-test-0-1|{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by East|TOPIC|State.tb=two-board-daylong-test-0-1|{"table":{"seqnum":14,"tableid":"two-board-daylong-test-0-1","trigger":{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}}}
+RECEIVE|Claim accepted by West|TOPIC|State.tb=two-board-daylong-test-0-1|{"table":{"seqnum":15,"tableid":"two-board-daylong-test-0-1","trigger":{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}}}
+RECEIVE|UPDATE state dump|TOPIC|State.tm=two-board-daylong-test-0-0|{"notice":18,"trigger":{"board":1,"event":2,"tableno":1}}
+
+# Board 1 Table 2 - Bid to 5C by North
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=two-board-daylong-test-0-2|{"table":{"seqnum":6,"tableid":"two-board-daylong-test-0-2","trigger":{"action":2,"board":{"dealer":2,"number":1,"vul":1},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":2}}}
+SEND|5C by North|QUEUE|Event.tb=two-board-daylong-test-0-2|{"alert":"","call":21,"seat":2,"type":"auction"}
+RECEIVE|5C by North|TOPIC|State.tb=two-board-daylong-test-0-2|{"table":{"seqnum":7,"tableid":"two-board-daylong-test-0-2","trigger":{"alert":"","call":21,"seat":2,"type":"auction"}}}
+SEND|P by East|QUEUE|Event.tb=two-board-daylong-test-0-2|{"alert":"","call":38,"seat":3,"type":"auction"}
+RECEIVE|P by East|TOPIC|State.tb=two-board-daylong-test-0-2|{"table":{"seqnum":8,"tableid":"two-board-daylong-test-0-2","trigger":{"alert":"","call":38,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=two-board-daylong-test-0-2|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=two-board-daylong-test-0-2|{"table":{"seqnum":9,"tableid":"two-board-daylong-test-0-2","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=two-board-daylong-test-0-2|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=two-board-daylong-test-0-2|{"table":{"seqnum":10,"tableid":"two-board-daylong-test-0-2","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+RECEIVE|PHASE TIMER canceled|TOPIC|State.tb=two-board-daylong-test-0-2|{"table":{"seqnum":11,"tableid":"two-board-daylong-test-0-2","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 1 Table 2 - Make Opening lead and claim making 5
+SEND|Opening lead by East|QUEUE|Event.tb=two-board-daylong-test-0-2|{"card":1,"seat":3,"type":"cardplay"}
+RECEIVE|Opening lead by East|TOPIC|State.tb=two-board-daylong-test-0-2|{"table":{"seqnum":12,"tableid":"two-board-daylong-test-0-2","trigger":{"card":1,"seat":3,"type":"cardplay"}}}
+SEND|Claim 11 tricks by North|QUEUE|Event.tb=two-board-daylong-test-0-2|{"action":5,"comment":"Marked double squeeze","seat":2,"tricks":11,"type":"command"}
+RECEIVE|Claim 11 tricks by North|TOPIC|State.tb=two-board-daylong-test-0-2|{"table":{"seqnum":13,"tableid":"two-board-daylong-test-0-2","trigger":{"action":5,"comment":"Marked double squeeze","seat":2,"tricks":11,"type":"command"}}}
+SEND|Claim accepted by East|QUEUE|Event.tb=two-board-daylong-test-0-2|{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}
+SEND|Claim accepted by West|QUEUE|Event.tb=two-board-daylong-test-0-2|{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by East|TOPIC|State.tb=two-board-daylong-test-0-2|{"table":{"seqnum":14,"tableid":"two-board-daylong-test-0-2","trigger":{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}}}
+RECEIVE|Claim accepted by West|TOPIC|State.tb=two-board-daylong-test-0-2|{"table":{"seqnum":15,"tableid":"two-board-daylong-test-0-2","trigger":{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}}}
+RECEIVE|UPDATE state dump|TOPIC|State.tm=two-board-daylong-test-0-0|{"notice":18,"trigger":{"board":1,"event":2,"tableno":2}}
+
+# Board 1 Table 3 - Bid to 5C by North
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=two-board-daylong-test-0-3|{"table":{"seqnum":6,"tableid":"two-board-daylong-test-0-3","trigger":{"action":2,"board":{"dealer":2,"number":1,"vul":1},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":2}}}
+SEND|5C by North|QUEUE|Event.tb=two-board-daylong-test-0-3|{"alert":"","call":21,"seat":2,"type":"auction"}
+RECEIVE|5C by North|TOPIC|State.tb=two-board-daylong-test-0-3|{"table":{"seqnum":7,"tableid":"two-board-daylong-test-0-3","trigger":{"alert":"","call":21,"seat":2,"type":"auction"}}}
+SEND|P by East|QUEUE|Event.tb=two-board-daylong-test-0-3|{"alert":"","call":38,"seat":3,"type":"auction"}
+RECEIVE|P by East|TOPIC|State.tb=two-board-daylong-test-0-3|{"table":{"seqnum":8,"tableid":"two-board-daylong-test-0-3","trigger":{"alert":"","call":38,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=two-board-daylong-test-0-3|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=two-board-daylong-test-0-3|{"table":{"seqnum":9,"tableid":"two-board-daylong-test-0-3","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=two-board-daylong-test-0-3|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=two-board-daylong-test-0-3|{"table":{"seqnum":10,"tableid":"two-board-daylong-test-0-3","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+RECEIVE|PHASE TIMER canceled|TOPIC|State.tb=two-board-daylong-test-0-3|{"table":{"seqnum":11,"tableid":"two-board-daylong-test-0-3","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 1 Table 3 - Make Opening lead and claim making 5
+SEND|Opening lead by East|QUEUE|Event.tb=two-board-daylong-test-0-3|{"card":1,"seat":3,"type":"cardplay"}
+RECEIVE|Opening lead by East|TOPIC|State.tb=two-board-daylong-test-0-3|{"table":{"seqnum":12,"tableid":"two-board-daylong-test-0-3","trigger":{"card":1,"seat":3,"type":"cardplay"}}}
+SEND|Claim 11 tricks by North|QUEUE|Event.tb=two-board-daylong-test-0-3|{"action":5,"comment":"Marked double squeeze","seat":2,"tricks":11,"type":"command"}
+RECEIVE|Claim 11 tricks by North|TOPIC|State.tb=two-board-daylong-test-0-3|{"table":{"seqnum":13,"tableid":"two-board-daylong-test-0-3","trigger":{"action":5,"comment":"Marked double squeeze","seat":2,"tricks":11,"type":"command"}}}
+SEND|Claim accepted by East|QUEUE|Event.tb=two-board-daylong-test-0-3|{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}
+SEND|Claim accepted by West|QUEUE|Event.tb=two-board-daylong-test-0-3|{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by East|TOPIC|State.tb=two-board-daylong-test-0-3|{"table":{"seqnum":14,"tableid":"two-board-daylong-test-0-3","trigger":{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}}}
+RECEIVE|Claim accepted by West|TOPIC|State.tb=two-board-daylong-test-0-3|{"table":{"seqnum":15,"tableid":"two-board-daylong-test-0-3","trigger":{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}}}
+RECEIVE|UPDATE state dump|TOPIC|State.tm=two-board-daylong-test-0-0|{"notice":18,"trigger":{"board":1,"event":2,"tableno":3}}
+
+# Pause table 3 before board 2
+SEND|PAUSE a table|QUEUE|Event.tm=two-board-daylong-test-0-0|{"corrid":"15","event":8,"action":2,"playerid":"81","replyto":"/queue/SessionTestRegistered"}
+RECEIVE|Confirm PAUSE|QUEUE|SessionTestRegistered|{"action":2,"corrid":"15","event":8,"playerid":"81","replyto":"/queue/SessionTestRegistered","status":true}
+RECEIVE|PAUSE state dump|TOPIC|State.tm=two-board-daylong-test-0-0|{"notice":18,"trigger":{"event":8,"action":2}}
+
+# Board 2 Table 1 - Bid to 3NT by East
+RECEIVE|TAKE DEAL 2|TOPIC|State.tb=two-board-daylong-test-0-1|{"table":{"seqnum":16,"tableid":"two-board-daylong-test-0-1","trigger":{"action":2,"board":{"dealer":3,"number":2,"vul":2},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":3}}}
+SEND|3N by East|QUEUE|Event.tb=two-board-daylong-test-0-1|{"alert":"","call":15,"seat":3,"type":"auction"}
+RECEIVE|3N by East|TOPIC|State.tb=two-board-daylong-test-0-1|{"table":{"seqnum":17,"tableid":"two-board-daylong-test-0-1","trigger":{"alert":"","call":15,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=two-board-daylong-test-0-1|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=two-board-daylong-test-0-1|{"table":{"seqnum":18,"tableid":"two-board-daylong-test-0-1","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=two-board-daylong-test-0-1|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=two-board-daylong-test-0-1|{"table":{"seqnum":19,"tableid":"two-board-daylong-test-0-1","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+SEND|P by North|QUEUE|Event.tb=two-board-daylong-test-0-1|{"alert":"","call":38,"seat":2,"type":"auction"}
+RECEIVE|P by North|TOPIC|State.tb=two-board-daylong-test-0-1|{"table":{"seqnum":20,"tableid":"two-board-daylong-test-0-1","trigger":{"alert":"","call":38,"seat":2,"type":"auction"}}}
+RECEIVE|PHASE TIMER expired|TOPIC|State.tb=two-board-daylong-test-0-1|{"table":{"seqnum":21,"tableid":"two-board-daylong-test-0-1","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 2 Table 1 - Make Opening lead and claim making 4
+SEND|Opening lead by South|QUEUE|Event.tb=two-board-daylong-test-0-1|{"card":2,"seat":4,"type":"cardplay"}
+RECEIVE|Opening lead by South|TOPIC|State.tb=two-board-daylong-test-0-1|{"table":{"seqnum":22,"tableid":"two-board-daylong-test-0-1","trigger":{"card":2,"seat":4,"type":"cardplay"}}}
+SEND|Claim 10 tricks by East|QUEUE|Event.tb=two-board-daylong-test-0-1|{"action":5,"comment":"","seat":3,"tricks":10,"type":"command"}
+RECEIVE|Claim 10 tricks by East|TOPIC|State.tb=two-board-daylong-test-0-1|{"table":{"seqnum":23,"tableid":"two-board-daylong-test-0-1","trigger":{"action":5,"comment":"","seat":3,"tricks":10,"type":"command"}}}
+SEND|Claim accepted by North|QUEUE|Event.tb=two-board-daylong-test-0-1|{"action":6,"number":1,"seat":2,"reject":false,"type":"command"}
+SEND|Claim accepted by South|QUEUE|Event.tb=two-board-daylong-test-0-1|{"action":6,"number":1,"seat":4,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by North|TOPIC|State.tb=two-board-daylong-test-0-1|{"table":{"seqnum":24,"tableid":"two-board-daylong-test-0-1","trigger":{"action":6,"number":1,"seat":2,"reject":false,"type":"command"}}}
+RECEIVE|Claim accepted by South|TOPIC|State.tb=two-board-daylong-test-0-1|{"table":{"seqnum":25,"tableid":"two-board-daylong-test-0-1","trigger":{"action":6,"number":1,"seat":4,"reject":false,"type":"command"}}}
+RECEIVE|UPDATE state dump|TOPIC|State.tm=two-board-daylong-test-0-0|{"notice":18,"trigger":{"board":2,"event":2,"tableno":1}}
+
+# End of round for Table 1
+RECEIVE|Table 1 EOT message|TOPIC|State.tb=two-board-daylong-test-0-1|{"table":{"tableid":"two-board-daylong-test-0-1","trigger":{"action":7,"tableid":"two-board-daylong-test-0-1","roster":[{"count":2,"iid":1,"pairno":1,"player1":"Robot:2","player2":"79","raw":100.0,"total":50.0}],"type":"command"}}}
+RECEIVE|Recorder EOR message - Table 1|TOPIC|State.sc=two-board-daylong-test|{"action":5,"corrid":"25","id":"two-board-daylong-test-0","roster":[{"count":2,"iid":1,"pairno":1,"player1":"Robot:2","player2":"79","raw":100.0,"total":50.0}],"round":2,"secno":0,"type":"DManager"}
+
+# Board 2 Table 2 - Start but don't play
+RECEIVE|TAKE DEAL 2|TOPIC|State.tb=two-board-daylong-test-0-2|{"table":{"tableid":"two-board-daylong-test-0-2","trigger":{"action":2,"board":{"dealer":3,"number":2,"vul":2},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":3}}}
+
+# Send Timeout
+SEND|Force Timeout|QUEUE|Event.tm=two-board-daylong-test-0-0|{"event":8,"action":4}
+RECEIVE|Timeout Section|TOPIC|State.tm=two-board-daylong-test-0-0|{"action":13,"external":true,"notice":10,"type":"timer"}
+RECEIVE|Timeout Table 2|TOPIC|State.tb=two-board-daylong-test-0-2|{"table":{"tableid":"two-board-daylong-test-0-2","trigger":{"action":13,"external":true,"notice":10,"type":"timer"}}}
+RECEIVE|EOR state dump|TOPIC|State.tm=two-board-daylong-test-0-0|{"notice":18,"trigger":{"event":8,"action":4}}
+
+# End of round for Table 2 - unfinished board scored
+RECEIVE|Table 2 EOT message|TOPIC|State.tb=two-board-daylong-test-0-2|{"table":{"tableid":"two-board-daylong-test-0-2","trigger":{"action":7,"roster":[{"count":2,"iid":3,"pairno":3,"player1":"Robot:2","player2":"80","raw":50.0,"total":25.0}],"tableid":"two-board-daylong-test-0-2","type":"command"}}}
+RECEIVE|UPDATE state dump|TOPIC|State.tm=two-board-daylong-test-0-0|{"notice":18,"trigger":{"board":2,"event":2,"tableno":2}}
+RECEIVE|Recorder EOR message - Table 2|TOPIC|State.sc=two-board-daylong-test|{"action":5,"corrid":"25","id":"two-board-daylong-test-0","roster":[{"count":2,"iid":3,"pairno":3,"player1":"Robot:2","player2":"80","raw":50.0,"total":25.0}],"round":2,"secno":0,"type":"DManager"}
+
+# End of round for Table 3 (no state dump)
+RECEIVE|Recorder EOR message - Table 3|TOPIC|State.sc=two-board-daylong-test|{"action":5,"corrid":"25","id":"two-board-daylong-test-0","roster":[{"count":2,"iid":5,"pairno":5,"player1":"Robot:2","player2":"81","raw":50.0,"total":25.0}],"round":2,"secno":0,"type":"DManager"}
+RECEIVE|EOT state dump|TOPIC|State.tm=two-board-daylong-test-0-0|{"notice":18,"trigger":{"event":8,"action":5}}
+
+# EOT Sent to Recorder
+RECEIVE|Recorder - Final|TOPIC|State.sc=two-board-daylong-test|{"notice":4,"corrid":"25","id":"two-board-daylong-test-0","roster":[{"count":2,"iid":1,"raw":100.0,"total":50.0},{"count":0,"iid":2,"raw":0.0,"total":0.0},{"count":2,"iid":3,"raw":50.0,"total":25.0},{"count":0,"iid":4,"raw":0.0,"total":0.0},{"count":2,"iid":5,"raw":50.0,"total":25.0},{"count":0,"iid":6,"raw":0.0,"total":0.0}],"round":2,"secno":0}
+RECEIVE|Final message|TOPIC|State.tm=two-board-daylong-test-0-0|{"notice":8}
+
+TEST|Full Daylong Tourney
+
+# Register three tables
+SEND|Register a table|QUEUE|Event.tm=full-daylong-test-0-0|{"event":8,"action":1,"playerid":"79","corrid":"15","replyto":"/queue/SessionTestRegistered"}
+SEND|Register a table|QUEUE|Event.tm=full-daylong-test-0-0|{"event":8,"action":1,"playerid":"80","corrid":"15","replyto":"/queue/SessionTestRegistered"}
+SEND|Register a table|QUEUE|Event.tm=full-daylong-test-0-0|{"event":8,"action":1,"playerid":"81","corrid":"15","replyto":"/queue/SessionTestRegistered"}
+
+# Get join messages from robots
+RECEIVE|Confirm registration|QUEUE|SessionTestRegistered|{"action":1,"corrid":"15","event":8,"playerid":"79","replyto":"/queue/SessionTestRegistered","status":true}
+RECEIVE|Register state dump|TOPIC|State.tm=full-daylong-test-0-0|{"notice":18,"tables":[{"playerid":"79","tableno":1}],"trigger":{"event":8,"action":1}}
+RECEIVE|Startup state dump|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":1,"trigger":{"action":0,"type":"command"}}}
+
+RECEIVE|JOIN by North|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":2,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+RECEIVE|JOIN by East|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":3,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+RECEIVE|JOIN by West|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":4,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+
+# Join South
+SEND|JOIN by South|QUEUE|Event.tb=full-daylong-test-0-1|{"action":1,"id":"79","seat":4,"type":"player"}
+RECEIVE|JOIN by South|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":5,"trigger":{"action":1,"external":false,"id":"79","seat":4,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+
+# Get join messages from robots
+RECEIVE|Confirm registration|QUEUE|SessionTestRegistered|{"action":1,"corrid":"15","event":8,"playerid":"80","replyto":"/queue/SessionTestRegistered","status":true}
+RECEIVE|Register state dump|TOPIC|State.tm=full-daylong-test-0-0|{"notice":18,"tables":[{"playerid":"79","tableno":1},{"playerid":"80","tableno":2}],"trigger":{"event":8,"action":1}}
+RECEIVE|Startup state dump|TOPIC|State.tb=full-daylong-test-0-2|{"table":{"seqnum":1,"trigger":{"action":0,"type":"command"}}}
+
+RECEIVE|JOIN by North|TOPIC|State.tb=full-daylong-test-0-2|{"table":{"seqnum":2,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+RECEIVE|JOIN by East|TOPIC|State.tb=full-daylong-test-0-2|{"table":{"seqnum":3,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+RECEIVE|JOIN by West|TOPIC|State.tb=full-daylong-test-0-2|{"table":{"seqnum":4,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+
+# Join South
+SEND|JOIN by South|QUEUE|Event.tb=full-daylong-test-0-2|{"action":1,"id":"80","seat":4,"type":"player"}
+RECEIVE|JOIN by South|TOPIC|State.tb=full-daylong-test-0-2|{"table":{"seqnum":5,"trigger":{"action":1,"external":false,"id":"80","seat":4,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+
+# Get join messages from robots
+RECEIVE|Confirm registration|QUEUE|SessionTestRegistered|{"action":1,"corrid":"15","event":8,"playerid":"81","replyto":"/queue/SessionTestRegistered","status":true}
+RECEIVE|Register state dump|TOPIC|State.tm=full-daylong-test-0-0|{"notice":18,"tables":[{"playerid":"79","tableno":1},{"playerid":"80","tableno":2}],"trigger":{"event":8,"action":1}}
+RECEIVE|Startup state dump|TOPIC|State.tb=full-daylong-test-0-3|{"table":{"seqnum":1,"trigger":{"action":0,"type":"command"}}}
+
+RECEIVE|JOIN by North|TOPIC|State.tb=full-daylong-test-0-3|{"table":{"seqnum":2,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+RECEIVE|JOIN by East|TOPIC|State.tb=full-daylong-test-0-3|{"table":{"seqnum":3,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+RECEIVE|JOIN by West|TOPIC|State.tb=full-daylong-test-0-3|{"table":{"seqnum":4,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+
+# Join South
+SEND|JOIN by South|QUEUE|Event.tb=full-daylong-test-0-3|{"action":1,"id":"81","seat":4,"type":"player"}
+RECEIVE|JOIN by South|TOPIC|State.tb=full-daylong-test-0-3|{"table":{"seqnum":5,"trigger":{"action":1,"external":false,"id":"81","seat":4,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+
+# Board 1 Table 1 - Bid to 5C by North
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":6,"tableid":"full-daylong-test-0-1","trigger":{"action":2,"board":{"dealer":2,"number":1,"vul":1},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":2}}}
+SEND|5C by North|QUEUE|Event.tb=full-daylong-test-0-1|{"alert":"","call":21,"seat":2,"type":"auction"}
+RECEIVE|5C by North|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":7,"tableid":"full-daylong-test-0-1","trigger":{"alert":"","call":21,"seat":2,"type":"auction"}}}
+SEND|P by East|QUEUE|Event.tb=full-daylong-test-0-1|{"alert":"","call":38,"seat":3,"type":"auction"}
+RECEIVE|P by East|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":8,"tableid":"full-daylong-test-0-1","trigger":{"alert":"","call":38,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=full-daylong-test-0-1|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":9,"tableid":"full-daylong-test-0-1","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=full-daylong-test-0-1|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":10,"tableid":"full-daylong-test-0-1","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+RECEIVE|PHASE TIMER canceled|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":11,"tableid":"full-daylong-test-0-1","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 1 Table 1 - Make Opening lead and claim making 5
+SEND|Opening lead by East|QUEUE|Event.tb=full-daylong-test-0-1|{"card":1,"seat":3,"type":"cardplay"}
+RECEIVE|Opening lead by East|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":12,"tableid":"full-daylong-test-0-1","trigger":{"card":1,"seat":3,"type":"cardplay"}}}
+SEND|Claim 11 tricks by North|QUEUE|Event.tb=full-daylong-test-0-1|{"action":5,"comment":"Marked double squeeze","seat":2,"tricks":11,"type":"command"}
+RECEIVE|Claim 11 tricks by North|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":13,"tableid":"full-daylong-test-0-1","trigger":{"action":5,"comment":"Marked double squeeze","seat":2,"tricks":11,"type":"command"}}}
+SEND|Claim accepted by East|QUEUE|Event.tb=full-daylong-test-0-1|{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}
+SEND|Claim accepted by West|QUEUE|Event.tb=full-daylong-test-0-1|{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by East|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":14,"tableid":"full-daylong-test-0-1","trigger":{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}}}
+RECEIVE|Claim accepted by West|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":15,"tableid":"full-daylong-test-0-1","trigger":{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}}}
+RECEIVE|UPDATE state dump|TOPIC|State.tm=full-daylong-test-0-0|{"notice":18,"trigger":{"board":1,"event":2,"tableno":1}}
+
+# Board 1 Table 2 - Bid to 5C by North
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=full-daylong-test-0-2|{"table":{"seqnum":6,"tableid":"full-daylong-test-0-2","trigger":{"action":2,"board":{"dealer":2,"number":1,"vul":1},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":2}}}
+SEND|5C by North|QUEUE|Event.tb=full-daylong-test-0-2|{"alert":"","call":21,"seat":2,"type":"auction"}
+RECEIVE|5C by North|TOPIC|State.tb=full-daylong-test-0-2|{"table":{"seqnum":7,"tableid":"full-daylong-test-0-2","trigger":{"alert":"","call":21,"seat":2,"type":"auction"}}}
+SEND|P by East|QUEUE|Event.tb=full-daylong-test-0-2|{"alert":"","call":38,"seat":3,"type":"auction"}
+RECEIVE|P by East|TOPIC|State.tb=full-daylong-test-0-2|{"table":{"seqnum":8,"tableid":"full-daylong-test-0-2","trigger":{"alert":"","call":38,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=full-daylong-test-0-2|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=full-daylong-test-0-2|{"table":{"seqnum":9,"tableid":"full-daylong-test-0-2","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=full-daylong-test-0-2|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=full-daylong-test-0-2|{"table":{"seqnum":10,"tableid":"full-daylong-test-0-2","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+RECEIVE|PHASE TIMER canceled|TOPIC|State.tb=full-daylong-test-0-2|{"table":{"seqnum":11,"tableid":"full-daylong-test-0-2","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 1 Table 2 - Make Opening lead and claim making 5
+SEND|Opening lead by East|QUEUE|Event.tb=full-daylong-test-0-2|{"card":1,"seat":3,"type":"cardplay"}
+RECEIVE|Opening lead by East|TOPIC|State.tb=full-daylong-test-0-2|{"table":{"seqnum":12,"tableid":"full-daylong-test-0-2","trigger":{"card":1,"seat":3,"type":"cardplay"}}}
+SEND|Claim 11 tricks by North|QUEUE|Event.tb=full-daylong-test-0-2|{"action":5,"comment":"Marked double squeeze","seat":2,"tricks":11,"type":"command"}
+RECEIVE|Claim 11 tricks by North|TOPIC|State.tb=full-daylong-test-0-2|{"table":{"seqnum":13,"tableid":"full-daylong-test-0-2","trigger":{"action":5,"comment":"Marked double squeeze","seat":2,"tricks":11,"type":"command"}}}
+SEND|Claim accepted by East|QUEUE|Event.tb=full-daylong-test-0-2|{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}
+SEND|Claim accepted by West|QUEUE|Event.tb=full-daylong-test-0-2|{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by East|TOPIC|State.tb=full-daylong-test-0-2|{"table":{"seqnum":14,"tableid":"full-daylong-test-0-2","trigger":{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}}}
+RECEIVE|Claim accepted by West|TOPIC|State.tb=full-daylong-test-0-2|{"table":{"seqnum":15,"tableid":"full-daylong-test-0-2","trigger":{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}}}
+RECEIVE|UPDATE state dump|TOPIC|State.tm=full-daylong-test-0-0|{"notice":18,"trigger":{"board":1,"event":2,"tableno":2}}
+
+# Board 1 Table 3 - Bid to 5C by North
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=full-daylong-test-0-3|{"table":{"seqnum":6,"tableid":"full-daylong-test-0-3","trigger":{"action":2,"board":{"dealer":2,"number":1,"vul":1},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":2}}}
+SEND|5C by North|QUEUE|Event.tb=full-daylong-test-0-3|{"alert":"","call":21,"seat":2,"type":"auction"}
+RECEIVE|5C by North|TOPIC|State.tb=full-daylong-test-0-3|{"table":{"seqnum":7,"tableid":"full-daylong-test-0-3","trigger":{"alert":"","call":21,"seat":2,"type":"auction"}}}
+SEND|P by East|QUEUE|Event.tb=full-daylong-test-0-3|{"alert":"","call":38,"seat":3,"type":"auction"}
+RECEIVE|P by East|TOPIC|State.tb=full-daylong-test-0-3|{"table":{"seqnum":8,"tableid":"full-daylong-test-0-3","trigger":{"alert":"","call":38,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=full-daylong-test-0-3|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=full-daylong-test-0-3|{"table":{"seqnum":9,"tableid":"full-daylong-test-0-3","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=full-daylong-test-0-3|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=full-daylong-test-0-3|{"table":{"seqnum":10,"tableid":"full-daylong-test-0-3","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+RECEIVE|PHASE TIMER canceled|TOPIC|State.tb=full-daylong-test-0-3|{"table":{"seqnum":11,"tableid":"full-daylong-test-0-3","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 1 Table 3 - Make Opening lead and claim making 5
+SEND|Opening lead by East|QUEUE|Event.tb=full-daylong-test-0-3|{"card":1,"seat":3,"type":"cardplay"}
+RECEIVE|Opening lead by East|TOPIC|State.tb=full-daylong-test-0-3|{"table":{"seqnum":12,"tableid":"full-daylong-test-0-3","trigger":{"card":1,"seat":3,"type":"cardplay"}}}
+SEND|Claim 11 tricks by North|QUEUE|Event.tb=full-daylong-test-0-3|{"action":5,"comment":"Marked double squeeze","seat":2,"tricks":11,"type":"command"}
+RECEIVE|Claim 11 tricks by North|TOPIC|State.tb=full-daylong-test-0-3|{"table":{"seqnum":13,"tableid":"full-daylong-test-0-3","trigger":{"action":5,"comment":"Marked double squeeze","seat":2,"tricks":11,"type":"command"}}}
+SEND|Claim accepted by East|QUEUE|Event.tb=full-daylong-test-0-3|{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}
+SEND|Claim accepted by West|QUEUE|Event.tb=full-daylong-test-0-3|{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by East|TOPIC|State.tb=full-daylong-test-0-3|{"table":{"seqnum":14,"tableid":"full-daylong-test-0-3","trigger":{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}}}
+RECEIVE|Claim accepted by West|TOPIC|State.tb=full-daylong-test-0-3|{"table":{"seqnum":15,"tableid":"full-daylong-test-0-3","trigger":{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}}}
+RECEIVE|UPDATE state dump|TOPIC|State.tm=full-daylong-test-0-0|{"notice":18,"trigger":{"board":1,"event":2,"tableno":3}}
+
+# Pause Table 3
+SEND|PAUSE a table|QUEUE|Event.tm=full-daylong-test-0-0|{"corrid":"15","event":8,"action":2,"playerid":"81","replyto":"/queue/SessionTestRegistered"}
+RECEIVE|Confirm PAUSE|QUEUE|SessionTestRegistered|{"action":2,"corrid":"15","event":8,"playerid":"81","replyto":"/queue/SessionTestRegistered","status":true}
+RECEIVE|PAUSE state dump|TOPIC|State.tm=full-daylong-test-0-0|{"notice":18,"trigger":{"event":8,"action":2}}
+
+# Board 2 Table 1 - Bid to 3NT by East
+RECEIVE|TAKE DEAL 2|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":16,"tableid":"full-daylong-test-0-1","trigger":{"action":2,"board":{"dealer":3,"number":2,"vul":2},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":3}}}
+SEND|3N by East|QUEUE|Event.tb=full-daylong-test-0-1|{"alert":"","call":15,"seat":3,"type":"auction"}
+RECEIVE|3N by East|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":17,"tableid":"full-daylong-test-0-1","trigger":{"alert":"","call":15,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=full-daylong-test-0-1|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":18,"tableid":"full-daylong-test-0-1","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=full-daylong-test-0-1|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":19,"tableid":"full-daylong-test-0-1","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+SEND|P by North|QUEUE|Event.tb=full-daylong-test-0-1|{"alert":"","call":38,"seat":2,"type":"auction"}
+RECEIVE|P by North|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":20,"tableid":"full-daylong-test-0-1","trigger":{"alert":"","call":38,"seat":2,"type":"auction"}}}
+RECEIVE|PHASE TIMER expired|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":21,"tableid":"full-daylong-test-0-1","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 2 Table 1 - Make Opening lead and claim making 4
+SEND|Opening lead by South|QUEUE|Event.tb=full-daylong-test-0-1|{"card":2,"seat":4,"type":"cardplay"}
+RECEIVE|Opening lead by South|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":22,"tableid":"full-daylong-test-0-1","trigger":{"card":2,"seat":4,"type":"cardplay"}}}
+SEND|Claim 10 tricks by East|QUEUE|Event.tb=full-daylong-test-0-1|{"action":5,"comment":"","seat":3,"tricks":10,"type":"command"}
+RECEIVE|Claim 10 tricks by East|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":23,"tableid":"full-daylong-test-0-1","trigger":{"action":5,"comment":"","seat":3,"tricks":10,"type":"command"}}}
+SEND|Claim accepted by North|QUEUE|Event.tb=full-daylong-test-0-1|{"action":6,"number":1,"seat":2,"reject":false,"type":"command"}
+SEND|Claim accepted by South|QUEUE|Event.tb=full-daylong-test-0-1|{"action":6,"number":1,"seat":4,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by North|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":24,"tableid":"full-daylong-test-0-1","trigger":{"action":6,"number":1,"seat":2,"reject":false,"type":"command"}}}
+RECEIVE|Claim accepted by South|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":25,"tableid":"full-daylong-test-0-1","trigger":{"action":6,"number":1,"seat":4,"reject":false,"type":"command"}}}
+RECEIVE|UPDATE state dump|TOPIC|State.tm=full-daylong-test-0-0|{"notice":18,"trigger":{"board":2,"event":2,"tableno":1}}
+
+# Board 2 Table 2 - Bid to 3NT by East
+RECEIVE|TAKE DEAL 2|TOPIC|State.tb=full-daylong-test-0-2|{"table":{"seqnum":16,"tableid":"full-daylong-test-0-2","trigger":{"action":2,"board":{"dealer":3,"number":2,"vul":2},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":3}}}
+SEND|3N by East|QUEUE|Event.tb=full-daylong-test-0-2|{"alert":"","call":15,"seat":3,"type":"auction"}
+RECEIVE|3N by East|TOPIC|State.tb=full-daylong-test-0-2|{"table":{"seqnum":17,"tableid":"full-daylong-test-0-2","trigger":{"alert":"","call":15,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=full-daylong-test-0-2|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=full-daylong-test-0-2|{"table":{"seqnum":18,"tableid":"full-daylong-test-0-2","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=full-daylong-test-0-2|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=full-daylong-test-0-2|{"table":{"seqnum":19,"tableid":"full-daylong-test-0-2","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+SEND|P by North|QUEUE|Event.tb=full-daylong-test-0-2|{"alert":"","call":38,"seat":2,"type":"auction"}
+RECEIVE|P by North|TOPIC|State.tb=full-daylong-test-0-2|{"table":{"seqnum":20,"tableid":"full-daylong-test-0-2","trigger":{"alert":"","call":38,"seat":2,"type":"auction"}}}
+RECEIVE|PHASE TIMER expired|TOPIC|State.tb=full-daylong-test-0-2|{"table":{"seqnum":21,"tableid":"full-daylong-test-0-2","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 2 Table 2 - Make Opening lead and claim making 4
+SEND|Opening lead by South|QUEUE|Event.tb=full-daylong-test-0-2|{"card":2,"seat":4,"type":"cardplay"}
+RECEIVE|Opening lead by South|TOPIC|State.tb=full-daylong-test-0-2|{"table":{"seqnum":22,"tableid":"full-daylong-test-0-2","trigger":{"card":2,"seat":4,"type":"cardplay"}}}
+SEND|Claim 10 tricks by East|QUEUE|Event.tb=full-daylong-test-0-2|{"action":5,"comment":"","seat":3,"tricks":10,"type":"command"}
+RECEIVE|Claim 10 tricks by East|TOPIC|State.tb=full-daylong-test-0-2|{"table":{"seqnum":23,"tableid":"full-daylong-test-0-2","trigger":{"action":5,"comment":"","seat":3,"tricks":10,"type":"command"}}}
+SEND|Claim accepted by North|QUEUE|Event.tb=full-daylong-test-0-2|{"action":6,"number":1,"seat":2,"reject":false,"type":"command"}
+SEND|Claim accepted by South|QUEUE|Event.tb=full-daylong-test-0-2|{"action":6,"number":1,"seat":4,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by North|TOPIC|State.tb=full-daylong-test-0-2|{"table":{"seqnum":24,"tableid":"full-daylong-test-0-2","trigger":{"action":6,"number":1,"seat":2,"reject":false,"type":"command"}}}
+RECEIVE|Claim accepted by South|TOPIC|State.tb=full-daylong-test-0-2|{"table":{"seqnum":25,"tableid":"full-daylong-test-0-2","trigger":{"action":6,"number":1,"seat":4,"reject":false,"type":"command"}}}
+RECEIVE|UPDATE state dump|TOPIC|State.tm=full-daylong-test-0-0|{"notice":18,"trigger":{"board":2,"event":2,"tableno":2}}
+
+# Board 3 Table 1 - Bid to 3NT by South
+RECEIVE|TAKE DEAL 3|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":26,"tableid":"full-daylong-test-0-1","trigger":{"action":2,"board":{"dealer":4,"number":3,"vul":3},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":4}}}
+SEND|3N by South|QUEUE|Event.tb=full-daylong-test-0-1|{"alert":"","call":15,"seat":4,"type":"auction"}
+RECEIVE|3N by South|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":27,"tableid":"full-daylong-test-0-1","trigger":{"alert":"","call":15,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=full-daylong-test-0-1|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":28,"tableid":"full-daylong-test-0-1","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+SEND|P by North|QUEUE|Event.tb=full-daylong-test-0-1|{"alert":"","call":38,"seat":2,"type":"auction"}
+RECEIVE|P by North|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":29,"tableid":"full-daylong-test-0-1","trigger":{"alert":"","call":38,"seat":2,"type":"auction"}}}
+SEND|P by East|QUEUE|Event.tb=full-daylong-test-0-1|{"alert":"","call":38,"seat":3,"type":"auction"}
+RECEIVE|P by East|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":30,"tableid":"full-daylong-test-0-1","trigger":{"alert":"","call":38,"seat":3,"type":"auction"}}}
+RECEIVE|PHASE TIMER expired|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":31,"tableid":"full-daylong-test-0-1","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 3 Table 1 - Make Opening lead and claim making 3
+SEND|Opening lead by West|QUEUE|Event.tb=full-daylong-test-0-1|{"card":51,"seat":1,"type":"cardplay"}
+RECEIVE|Opening lead by West|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":32,"tableid":"full-daylong-test-0-1","trigger":{"card":51,"seat":1,"type":"cardplay"}}}
+SEND|Claim 9 tricks by South|QUEUE|Event.tb=full-daylong-test-0-1|{"action":5,"comment":"","seat":4,"tricks":9,"type":"command"}
+RECEIVE|Claim 9 tricks by South|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":33,"tableid":"full-daylong-test-0-1","trigger":{"action":5,"comment":"","seat":4,"tricks":9,"type":"command"}}}
+SEND|Claim accepted by East|QUEUE|Event.tb=full-daylong-test-0-1|{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}
+SEND|Claim accepted by West|QUEUE|Event.tb=full-daylong-test-0-1|{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by East|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":34,"tableid":"full-daylong-test-0-1","trigger":{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}}}
+RECEIVE|Claim accepted by West|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":35,"tableid":"full-daylong-test-0-1","trigger":{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}}}
+RECEIVE|UPDATE state dump|TOPIC|State.tm=full-daylong-test-0-0|{"notice":18,"trigger":{"board":3,"event":2,"tableno":1}}
+
+# End of round for Table 1
+RECEIVE|Table 1 EOT message|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":36,"trigger":{"action":7,"tableid":"full-daylong-test-0-1","roster":[{"count":3,"iid":1,"pairno":1,"player1":"Robot:2","player2":"79","raw":150.0,"total":50.0}],"type":"command"}}}
+RECEIVE|Recorder EOR message - Table 1|TOPIC|State.sc=full-daylong-test|{"action":5,"corrid":"25","id":"full-daylong-test-0","matrix":[[{"board":1,"ew":{"award":0.0,"prno":2,"result":-400,"status":1,"summary":"5CN="},"ns":{"award":50.0,"prno":1,"result":400,"status":1,"summary":"5CN="},"table":1,"tableid":"full-daylong-test-0-1"}],[{"board":2,"ew":{"award":0.0,"prno":2,"result":430,"status":1,"summary":"3NTE+1"},"ns":{"award":50.0,"prno":1,"result":-430,"status":1,"summary":"3NTE+1"},"table":1,"tableid":"full-daylong-test-0-1"}],[{"board":3,"ew":{"award":0.0,"prno":2,"result":-400,"status":1,"summary":"3NTS="},"ns":{"award":50.0,"prno":1,"result":400,"status":1,"summary":"3NTS="},"table":1,"tableid":"full-daylong-test-0-1"}]],"roster":[{"count":3,"iid":1,"pairno":1,"player1":"Robot:2","player2":"79","raw":150.0,"total":50.0}],"round":2,"secno":0,"type":"DManager"}
+
+# Board 3 Table 2 - Start but don't play
+RECEIVE|TAKE DEAL 3|TOPIC|State.tb=full-daylong-test-0-2|{"table":{"seqnum":26,"tableid":"full-daylong-test-0-2","trigger":{"action":2,"board":{"dealer":4,"number":3,"vul":3},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":4}}}
+
+# Send Timeout
+SEND|Force Timeout|QUEUE|Event.tm=full-daylong-test-0-0|{"event":8,"action":4}
+RECEIVE|Timeout Section|TOPIC|State.tm=full-daylong-test-0-0|{"action":13,"external":true,"notice":10,"type":"timer"}
+#RECEIVE|Timeout Table 1|TOPIC|State.tb=full-daylong-test-0-1|{"table":{"seqnum":37,"tableid":"full-daylong-test-0-1","trigger":{"action":13,"external":true,"notice":10,"type":"timer"}}}
+RECEIVE|Timeout Table 2|TOPIC|State.tb=full-daylong-test-0-2|{"table":{"seqnum":27,"tableid":"full-daylong-test-0-2","trigger":{"action":13,"external":true,"notice":10,"type":"timer"}}}
+RECEIVE|EOR state dump|TOPIC|State.tm=full-daylong-test-0-0|{"notice":18,"trigger":{"event":8,"action":4}}
+
+# End of round for Table 2
+RECEIVE|Table 2 EOT message|TOPIC|State.tb=full-daylong-test-0-2|{"table":{"seqnum":28,"tableid":"full-daylong-test-0-2","trigger":{"action":7,"roster":[{"count":3,"iid":3,"pairno":3,"player1":"Robot:2","player2":"80","raw":100.0,"total":33.333333333333336}],"tableid":"full-daylong-test-0-2","type":"command"}}}
+RECEIVE|UPDATE state dump|TOPIC|State.tm=full-daylong-test-0-0|{"notice":18,"trigger":{"board":3,"event":2,"tableno":2}}
+RECEIVE|Recorder EOR message - Table 2|TOPIC|State.sc=full-daylong-test|{"action":5,"corrid":"25","id":"full-daylong-test-0","roster":[{"count":3,"iid":3,"pairno":3,"player1":"Robot:2","player2":"80","raw":100.0,"total":33.333333333333336}],"round":2,"secno":0,"type":"DManager"}
+
+# End of round for Table 3 - paused so no state dump
+RECEIVE|Recorder EOR message - Table 3|TOPIC|State.sc=full-daylong-test|{"action":5,"corrid":"25","id":"full-daylong-test-0","roster":[{"count":3,"iid":5,"pairno":5,"player1":"Robot:2","player2":"81","raw":50.0,"total":16.666666666666668}],"round":2,"secno":0,"type":"DManager"}
+RECEIVE|EOT state dump|TOPIC|State.tm=full-daylong-test-0-0|{"notice":18,"trigger":{"event":8,"action":5}}
+
+# EOT Sent to Recorder
+RECEIVE|Recorder - Final|TOPIC|State.sc=full-daylong-test|{"notice":4,"corrid":"25","id":"full-daylong-test-0","roster":[{"count":3,"iid":1,"pairno":1,"player1":"Robot:2","player2":"79","raw":150.0,"total":50.0},{"count":0,"iid":2,"pairno":2,"player1":"Robot:1","player2":"Robot:3","raw":0.0,"total":0.0},{"count":3,"iid":3,"pairno":3,"player1":"Robot:2","player2":"80","raw":100.0,"total":33.333333333333336},{"count":0,"iid":4,"pairno":4,"player1":"Robot:1","player2":"Robot:3","raw":0.0,"total":0.0},{"count":3,"iid":5,"pairno":5,"player1":"Robot:2","player2":"81","raw":50.0,"total":16.666666666666668},{"count":0,"iid":6,"pairno":6,"player1":"Robot:1","player2":"Robot:3","raw":0.0,"total":0.0}],"round":2,"secno":0}
+RECEIVE|Final message|TOPIC|State.tm=full-daylong-test-0-0|{"notice":8}
+
+TEST|Pause and restart Daylong Tourney 
+
+# To test:
+#    go to Bridge/backend directory and execute
+#        bin/run_setup.sh (kills any existing Sections and Tables and clean the /tmp directory of logfiles)
+#        (do not start SessionLauncher)
+#    go to TestingHarness/build directory and execute
+#        ./run_test.sh PauseAndRestart local
+#    go to Bridge/backend directory and execute
+#        bin/run_daylong_tourney.sh 2
+#        (be sure to specify 2)
+
+# Register a table and get join messages from robots
+SEND|Register a table|QUEUE|Event.tm=pause-and-restart-test-0-0|{"event":8,"action":1,"playerid":"79","corrid":"15","testmode":true,"replyto":"/queue/SessionTestRegistered"}
+RECEIVE|Confirm registration|QUEUE|SessionTestRegistered|{"action":1,"corrid":"15","event":8,"playerid":"79","replyto":"/queue/SessionTestRegistered","status":true}
+RECEIVE|Register state dump|TOPIC|State.tm=pause-and-restart-test-0-0|{"notice":18,"tables":[{"playerid":"79","tableno":1}],"trigger":{"event":8,"action":1}}
+RECEIVE|Startup state dump|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"seqnum":1,"trigger":{"action":0,"type":"command"}}}
+
+# Get diagnostics
+SEND|Request bdmgr|QUEUE|Event.tb=pause-and-restart-test-0-1|{"type":"diagnostics","bdmgr":1,"replyto":"SessionTestDiagnostics"}
+RECEIVE|Show bdmgr|QUEUE|SessionTestDiagnostics|{"bdmgr":{"round":0}}
+
+RECEIVE|JOIN by North|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"seqnum":2,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+RECEIVE|JOIN by East|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"seqnum":3,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+RECEIVE|JOIN by West|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"seqnum":4,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+
+# Join South
+SEND|JOIN by South|QUEUE|Event.tb=pause-and-restart-test-0-1|{"action":1,"id":"79","seat":4,"type":"player"}
+RECEIVE|JOIN by South|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"seqnum":5,"trigger":{"action":1,"external":false,"id":"79","seat":4,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+
+# Board 1 Table 1 - Bid to 5C by North
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"seqnum":6,"tableid":"pause-and-restart-test-0-1","trigger":{"action":2,"board":{"dealer":2,"number":1,"vul":1},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":2}}}
+
+# Get diagnostics
+SEND|Request bdmgr|QUEUE|Event.tb=pause-and-restart-test-0-1|{"type":"diagnostics","bdmgr":1,"replyto":"SessionTestDiagnostics"}
+RECEIVE|Show bdmgr|QUEUE|SessionTestDiagnostics|{"bdmgr":{"round":0}}
+
+SEND|5C by North|QUEUE|Event.tb=pause-and-restart-test-0-1|{"alert":"","call":21,"seat":2,"type":"auction"}
+RECEIVE|5C by North|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"seqnum":7,"tableid":"pause-and-restart-test-0-1","trigger":{"alert":"","call":21,"seat":2,"type":"auction"}}}
+SEND|P by East|QUEUE|Event.tb=pause-and-restart-test-0-1|{"alert":"","call":38,"seat":3,"type":"auction"}
+RECEIVE|P by East|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"seqnum":8,"tableid":"pause-and-restart-test-0-1","trigger":{"alert":"","call":38,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=pause-and-restart-test-0-1|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"seqnum":9,"tableid":"pause-and-restart-test-0-1","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=pause-and-restart-test-0-1|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"seqnum":10,"tableid":"pause-and-restart-test-0-1","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+RECEIVE|PHASE TIMER canceled|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"seqnum":11,"tableid":"pause-and-restart-test-0-1","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 1 Table 1 - Make Opening lead and claim making 5
+SEND|Opening lead by East|QUEUE|Event.tb=pause-and-restart-test-0-1|{"card":1,"seat":3,"type":"cardplay"}
+RECEIVE|Opening lead by East|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"seqnum":12,"tableid":"pause-and-restart-test-0-1","trigger":{"card":1,"seat":3,"type":"cardplay"}}}
+SEND|Claim 11 tricks by North|QUEUE|Event.tb=pause-and-restart-test-0-1|{"action":5,"comment":"Marked double squeeze","seat":2,"tricks":11,"type":"command"}
+RECEIVE|Claim 11 tricks by North|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"seqnum":13,"tableid":"pause-and-restart-test-0-1","trigger":{"action":5,"comment":"Marked double squeeze","seat":2,"tricks":11,"type":"command"}}}
+SEND|Claim accepted by East|QUEUE|Event.tb=pause-and-restart-test-0-1|{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}
+SEND|Claim accepted by West|QUEUE|Event.tb=pause-and-restart-test-0-1|{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by East|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"seqnum":14,"tableid":"pause-and-restart-test-0-1","trigger":{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}}}
+RECEIVE|Claim accepted by West|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"seqnum":15,"tableid":"pause-and-restart-test-0-1","trigger":{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}}}
+RECEIVE|UPDATE state dump|TOPIC|State.tm=pause-and-restart-test-0-0|{"notice":18,"trigger":{"board":1,"event":2,"tableno":1}}
+
+# Board 2 Table 1 - Take deal 
+RECEIVE|TAKE DEAL 2|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"tableid":"pause-and-restart-test-0-1","trigger":{"action":2,"board":{"dealer":3,"number":2,"vul":2},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":3}}}
+
+# Get diagnostics
+SEND|Request bdmgr|QUEUE|Event.tb=pause-and-restart-test-0-1|{"type":"diagnostics","bdmgr":1,"params":1,"replyto":"SessionTestDiagnostics"}
+RECEIVE|Show bdmgr|QUEUE|SessionTestDiagnostics|{"bdmgr":{"round":0},"params":{"round":1}}
+
+# Pause table 1 before auction
+SEND|PAUSE a table|QUEUE|Event.tm=pause-and-restart-test-0-0|{"corrid":"15","event":8,"action":2,"playerid":"79","replyto":"/queue/SessionTestRegistered"}
+RECEIVE|PAUSE Table 1|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"trigger":{"action":2,"type":"DManager"}}}
+RECEIVE|Confirm PAUSE|QUEUE|SessionTestRegistered|{"action":2,"corrid":"15","event":8,"playerid":"79","replyto":"/queue/SessionTestRegistered","status":true}
+RECEIVE|PAUSE state dump|TOPIC|State.tm=pause-and-restart-test-0-0|{"notice":18,"trigger":{"event":8,"action":2}}
+
+# Resume table 1 for board 2
+SEND|RESUME a table|QUEUE|Event.tm=pause-and-restart-test-0-0|{"corrid":"15","event":8,"action":3,"playerid":"79","replyto":"/queue/SessionTestRegistered"}
+RECEIVE|Confirm RESUME|QUEUE|SessionTestRegistered|{"action":3,"corrid":"15","event":8,"playerid":"79","replyto":"/queue/SessionTestRegistered","status":true}
+RECEIVE|RESUME Table 1|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"trigger":{"action":2,"type":"DManager"}}}
+RECEIVE|RESUME state dump|TOPIC|State.tm=pause-and-restart-test-0-0|{"notice":18,"trigger":{"event":8,"action":3}}
+
+RECEIVE|JOIN by North|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":3}}}
+RECEIVE|JOIN by East|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":3}}}
+RECEIVE|JOIN by West|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":3}}}
+
+# Get diagnostics
+SEND|Request bdmgr|QUEUE|Event.tb=pause-and-restart-test-0-1|{"type":"diagnostics","bdmgr":1,"params":1,"players":1,"replyto":"SessionTestDiagnostics"}
+RECEIVE|Show bdmgr|QUEUE|SessionTestDiagnostics|{"bdmgr":{"round":0},"params":{"round":1}}
+
+# Board 2 Table 1 - Bid to 3NT by East
+SEND|3N by East|QUEUE|Event.tb=pause-and-restart-test-0-1|{"alert":"","call":15,"seat":3,"type":"auction"}
+RECEIVE|3N by East|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"tableid":"pause-and-restart-test-0-1","trigger":{"alert":"","call":15,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=pause-and-restart-test-0-1|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"tableid":"pause-and-restart-test-0-1","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=pause-and-restart-test-0-1|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"tableid":"pause-and-restart-test-0-1","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+SEND|P by North|QUEUE|Event.tb=pause-and-restart-test-0-1|{"alert":"","call":38,"seat":2,"type":"auction"}
+RECEIVE|P by North|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"tableid":"pause-and-restart-test-0-1","trigger":{"alert":"","call":38,"seat":2,"type":"auction"}}}
+
+# Pause table 1 before play
+SEND|PAUSE a table|QUEUE|Event.tm=pause-and-restart-test-0-0|{"corrid":"15","event":8,"action":2,"playerid":"79","replyto":"/queue/SessionTestRegistered"}
+RECEIVE|PAUSE Table 1|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"trigger":{"action":2,"type":"DManager"}}}
+RECEIVE|Confirm PAUSE|QUEUE|SessionTestRegistered|{"action":2,"corrid":"15","event":8,"playerid":"79","replyto":"/queue/SessionTestRegistered","status":true}
+RECEIVE|PAUSE state dump|TOPIC|State.tm=pause-and-restart-test-0-0|{"notice":18,"trigger":{"event":8,"action":2}}
+
+# Resume table 1 after bidding
+SEND|RESUME a table|QUEUE|Event.tm=pause-and-restart-test-0-0|{"corrid":"15","event":8,"action":3,"playerid":"79","replyto":"/queue/SessionTestRegistered"}
+RECEIVE|Confirm RESUME|QUEUE|SessionTestRegistered|{"action":3,"corrid":"15","event":8,"playerid":"79","replyto":"/queue/SessionTestRegistered","status":true}
+RECEIVE|RESUME Table 1|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"trigger":{"action":2,"type":"DManager"}}}
+RECEIVE|RESUME state dump|TOPIC|State.tm=pause-and-restart-test-0-0|{"notice":18,"trigger":{"event":8,"action":3}}
+RECEIVE|JOIN by North|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"Opening leader: South (3 second wait)","phase":1,"status":1,"who":4}}}
+RECEIVE|JOIN by East|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"Opening leader: South (3 second wait)","phase":1,"status":1,"who":4}}}
+RECEIVE|JOIN by West|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"Opening leader: South (3 second wait)","phase":1,"status":1,"who":4}}}
+RECEIVE|PHASE TIMER expired|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"tableid":"pause-and-restart-test-0-1","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Pause table
+SEND|PAUSE a table|QUEUE|Event.tm=pause-and-restart-test-0-0|{"corrid":"15","event":8,"action":2,"playerid":"79","replyto":"/queue/SessionTestRegistered"}
+RECEIVE|PAUSE Table 1|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"trigger":{"action":2,"type":"DManager"}}}
+RECEIVE|Confirm PAUSE|QUEUE|tableRegistered8|{"action":2,"corrid":"15","event":8,"playerid":"79","replyto":"/queue/tableRegistered8","status":true}
+RECEIVE|PAUSE state dump|TOPIC|State.tm=pause-and-restart-test-0-0|{"notice":18,"trigger":{"event":8,"action":2}}
+
+# Resume table and continue play
+SEND|RESUME a table|QUEUE|Event.tm=pause-and-restart-test-0-0|{"corrid":"15","event":8,"action":3,"playerid":"79","replyto":"/queue/SessionTestRegistered"}
+RECEIVE|Confirm RESUME|QUEUE|SessionTestRegistered|{"action":3,"corrid":"15","event":8,"playerid":"79","replyto":"/queue/SessionTestRegistered","status":true}
+RECEIVE|RESUME Table 1|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"trigger":{"action":2,"type":"DManager"}}}
+RECEIVE|RESUME state dump|TOPIC|State.tm=pause-and-restart-test-0-0|{"notice":18,"trigger":{"event":8,"action":3}}
+
+RECEIVE|JOIN by North|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"Opening leader: South","phase":2,"status":1,"who":4}}}
+RECEIVE|JOIN by East|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"Opening leader: South","phase":2,"status":1,"who":4}}}
+RECEIVE|JOIN by West|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"Opening leader: South","phase":2,"status":1,"who":4}}}
+
+# Board 2 Table 1 - Make Opening lead and claim making 4
+SEND|Opening lead by South|QUEUE|Event.tb=pause-and-restart-test-0-1|{"card":2,"seat":4,"type":"cardplay"}
+RECEIVE|Opening lead by South|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"tableid":"pause-and-restart-test-0-1","trigger":{"card":2,"seat":4,"type":"cardplay"}}}
+SEND|Claim 10 tricks by East|QUEUE|Event.tb=pause-and-restart-test-0-1|{"action":5,"comment":"","seat":3,"tricks":10,"type":"command"}
+RECEIVE|Claim 10 tricks by East|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"tableid":"pause-and-restart-test-0-1","trigger":{"action":5,"comment":"","seat":3,"tricks":10,"type":"command"}}}
+
+# Pause table 1 during claim
+SEND|PAUSE a table|QUEUE|Event.tm=pause-and-restart-test-0-0|{"corrid":"15","event":8,"action":2,"playerid":"79","replyto":"/queue/SessionTestRegistered"}
+RECEIVE|PAUSE Table 1|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"trigger":{"action":2,"type":"DManager"}}}
+RECEIVE|Confirm PAUSE|QUEUE|SessionTestRegistered|{"action":2,"corrid":"15","event":8,"playerid":"79","replyto":"/queue/SessionTestRegistered","status":true}
+RECEIVE|PAUSE state dump|TOPIC|State.tm=pause-and-restart-test-0-0|{"notice":18,"trigger":{"event":8,"action":2}}
+
+# Resume table 1 
+SEND|RESUME a table|QUEUE|Event.tm=pause-and-restart-test-0-0|{"corrid":"15","event":8,"action":3,"playerid":"79","replyto":"/queue/SessionTestRegistered"}
+RECEIVE|Confirm RESUME|QUEUE|SessionTestRegistered|{"action":3,"corrid":"15","event":8,"playerid":"79","replyto":"/queue/SessionTestRegistered","status":true}
+RECEIVE|RESUME Table 1|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"trigger":{"action":2,"type":"DManager"}}}
+RECEIVE|RESUME state dump|TOPIC|State.tm=pause-and-restart-test-0-0|{"notice":18,"trigger":{"event":8,"action":3}}
+
+RECEIVE|JOIN by North|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"Opening leader: South","phase":2,"status":1,"who":1}}}
+RECEIVE|JOIN by East|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"Opening leader: South","phase":2,"status":1,"who":1}}}
+RECEIVE|JOIN by West|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"Opening leader: South","phase":2,"status":1,"who":1}}}
+
+SEND|Claim accepted by North|QUEUE|Event.tb=pause-and-restart-test-0-1|{"action":6,"number":1,"seat":2,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by North|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"tableid":"pause-and-restart-test-0-1","trigger":{"action":6,"number":1,"seat":2,"reject":false,"type":"command"}}}
+
+# Let claim timer expire
+RECEIVE|CLAIM TIMER expired|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"tableid":"pause-and-restart-test-0-1","trigger":{"action":7,"external":false,"type":"timer"}}}
+RECEIVE|UPDATE state dump|TOPIC|State.tm=pause-and-restart-test-0-0|{"notice":18,"trigger":{"board":2,"event":2,"tableno":1}}
+
+# End of round for Table 1
+RECEIVE|Table 1 EOT message|TOPIC|State.tb=pause-and-restart-test-0-1|{"table":{"tableid":"pause-and-restart-test-0-1","trigger":{"action":7,"tableid":"pause-and-restart-test-0-1","roster":[{"count":2,"iid":1,"pairno":1,"player1":"Robot:2","player2":"79","raw":100.0,"total":50.0}],"type":"command"}}}
+RECEIVE|Recorder EOR message - Table 1|TOPIC|State.sc=pause-and-restart-test|{"action":5,"corrid":"25","id":"pause-and-restart-test-0","roster":[{"count":2,"iid":1,"pairno":1,"player1":"Robot:2","player2":"79","raw":100.0,"total":50.0}],"round":2,"secno":0,"type":"DManager"}
+
+# Send Timeout
+SEND|Force Timeout|QUEUE|Event.tm=pause-and-restart-test-0-0|{"event":8,"action":4}
+RECEIVE|Timeout Section|TOPIC|State.tm=pause-and-restart-test-0-0|{"action":13,"external":true,"notice":10,"type":"timer"}
+RECEIVE|EOR state dump|TOPIC|State.tm=pause-and-restart-test-0-0|{"notice":18,"trigger":{"event":8,"action":4}}
+RECEIVE|EOT state dump|TOPIC|State.tm=pause-and-restart-test-0-0|{"notice":18,"trigger":{"event":8,"action":5}}
+
+# EOT Sent to Recorder
+RECEIVE|Recorder - Final|TOPIC|State.sc=pause-and-restart-test|{"notice":4,"corrid":"25","id":"pause-and-restart-test-0","roster":[{"count":2,"iid":1,"raw":100.0,"total":50.0}],"round":2,"secno":0}
+RECEIVE|Final message|TOPIC|State.tm=pause-and-restart-test-0-0|{"notice":8}

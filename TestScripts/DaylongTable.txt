@@ -1,0 +1,54 @@
+TEST|Daylong Table
+
+# To debug:
+#    go to Bridge/backend directory and execute
+#        bin/run_setup.sh (kills any existing Sections and Tables and clean the /tmp directory of logfiles)
+#        bin/debug_daylong_table.sh (creates lh-test.cfg file)
+#    make sure launch.json file, in "Run Table" section, has the following parameters:
+#        "args": ["-c/tmp/lh-test.cfg", "-tlh-test-0-1"]
+#    go to TestingHarness/build directory and execute
+#        ./run_test.sh DaylongTable local 
+#        (after adding any additional messages you may wish to pass for debugging to build/scripts/DaylongTable.txt)   
+#    in "Run and Debug" window, select "Run Table" and click arrow or press F5 to start debugger
+
+# Get diagnostics
+SEND|Request diagnostics|QUEUE|Event.tb=lh-test-0-1|{"type":"diagnostics","state":1,"replyto":"diagnosticsResult"}
+RECEIVE|Startup state dump (may take some time)|TOPIC|State.tb=lh-test-0-1|{"table":{"trigger":{"action":0,"type":"command"},"turn":{"message":""}}}
+RECEIVE|Show diagnostics|QUEUE|diagnosticsResult|{"bdmgr":{"round":0}}
+
+RECEIVE|JOIN by North|TOPIC|State.tb=lh-test-0-1|{"table":{"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+RECEIVE|JOIN by East|TOPIC|State.tb=lh-test-0-1|{"table":{"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+RECEIVE|JOIN by West|TOPIC|State.tb=lh-test-0-1|{"table":{"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+
+# Join South
+SEND|JOIN by South|QUEUE|Event.tb=lh-test-0-1|{"action":1,"id":"79","seat":4,"type":"player"}
+RECEIVE|JOIN by South|TOPIC|State.tb=lh-test-0-1|{"table":{"trigger":{"action":1,"external":false,"id":"79","seat":4,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+
+# Simulate SETUP message from DManager
+SEND|Setup Message|QUEUE|Event.tb=lh-test-0-1|{"type":"DManager","action":1,"bpr":1,"corrid":"25","deals":[{"boardid":2,"cards":[2,3,4,3,1,1,1,1,4,2,3,2,3,2,2,2,4,3,2,4,2,2,4,2,1,4,3,1,4,3,3,2,4,1,2,4,4,3,3,3,1,1,4,3,4,3,4,1,1,2,1,1],"dealer":2,"id":"AFB58433DF921C918624B86737","number":1,"vul":1}],"round":1,"rounds":1,"seating":[{"ewno":2,"iids":[1,2],"nsno":1,"tableno":1}],"secno":0,"tables":1}
+
+# Get TAKE DEAL message
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=lh-test-0-1|{"table":{"trigger":{"action":2,"board":{"dealer":2,"number":1,"vul":1},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":2}}}
+
+SEND|5C by North|QUEUE|Event.tb=lh-test-0-1|{"alert":"","call":21,"seat":2,"type":"auction"}
+RECEIVE|5C by North|TOPIC|State.tb=lh-test-0-1|{"table":{"tableid":"lh-test-0-1","trigger":{"alert":"","call":21,"seat":2,"type":"auction"}}}
+SEND|P by East|QUEUE|Event.tb=lh-test-0-1|{"alert":"","call":38,"seat":3,"type":"auction"}
+RECEIVE|P by East|TOPIC|State.tb=lh-test-0-1|{"table":{"tableid":"lh-test-0-1","trigger":{"alert":"","call":38,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=lh-test-0-1|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=lh-test-0-1|{"table":{"tableid":"lh-test-0-1","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=lh-test-0-1|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=lh-test-0-1|{"table":{"tableid":"lh-test-0-1","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+RECEIVE|PHASE TIMER canceled|TOPIC|State.tb=lh-test-0-1|{"table":{"tableid":"lh-test-0-1","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Get diagnostics
+SEND|Request bdmgr|QUEUE|Event.tb=lh-test-0-1|{"type":"diagnostics","bdmgr":1,"players":1,"replyto":"diagnosticsResult"}
+RECEIVE|Show bdmgr|QUEUE|diagnosticsResult|{"bdmgr":{"round":0}}
+
+# Send PAUSE request
+SEND|PAUSE table|QUEUE|Event.tb=lh-test-0-1|{"action":2,"type":"DManager"}
+RECEIVE|PAUSE Table 1|TOPIC|State.tb=lh-test-0-1|{"table":{"trigger":{"action":2,"type":"DManager"}}}
+
+
+
+
+

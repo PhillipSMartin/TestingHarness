@@ -1,0 +1,2 @@
+TEST|Start Tourney with Sitout
+SEND||QUEUE|Q.SessionLaunch|{"bpr":1,"corrid":"25","flags":0,"form":"M","histkey":"q:dealHistory:all","id":"lh-test","mvmt":"Mitchell","pairs":3,"replyto":"/queue/tournamentLaunched8","resultkey":"q:tournamentResult:all","rounds":2,"tables":2,"title":"Test"}

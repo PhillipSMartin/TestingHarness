@@ -1,0 +1,1 @@
+start-tourney|{"bpr":2,"corrid":"25","flags":3,"form":"MP","histkey":"q:dealHistory:all","id":"tournament-26","mvmt":"MITCHELL","pairs":4,"replyto":"/queue/tournamentLaunched8","resultkey":"q:tournamentResult:all","rounds":2,"tables":2,"title":"Test v8","tpb":600000}|;

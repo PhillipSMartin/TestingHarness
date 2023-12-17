@@ -1,0 +1,1 @@
+diagnostics|{"event":9,"replyto":"diagnosticsResult","all":0,"params":0,"state":0,"roster":0,"seating":0,"movement":0,"tables":0,"bdmgr":0,"matrix":0}|Set any tag to 1 to print that structure;'state' shows secno, round, pTracker, and rTracker;'all' prints everything

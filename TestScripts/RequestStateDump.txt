@@ -1,0 +1,3 @@
+TEST|Request State Dump Test
+SEND||QUEUE|Event.tb=lh-test-1|{"action":0,"type":"command"}
+RECEIVE||TOPIC|State.tb=lh-test-1|{"table":{"tableid":"lh-test-1"}}

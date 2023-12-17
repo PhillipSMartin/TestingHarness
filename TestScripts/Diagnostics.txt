@@ -1,0 +1,3 @@
+TEST|Diagnostics
+SEND|Request params|QUEUE|Event.tm=full-tourney-test-0-0|{"event":9,"params":1,"replyto":"diagnosticsResult"}
+RECEIVE|Show params|QUEUE|diagnosticsResult|{"params":{"bpr":2}}

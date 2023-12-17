@@ -1,0 +1,46 @@
+TEST|Daylong With Robots
+
+# To test:
+#    go to Bridge/backend directory and execute
+#        bin/run_setup.sh (kills any existing Sections and Tables and clean the /tmp directory of logfiles)
+#        (do not start SessionLauncher)
+#    go to TestingHarness/build directory and execute
+#        ./run_test.sh DaylongWithRobots local
+#    go to Bridge/backend directory and execute
+#        bin/run_daylong_with_robots.sh 1
+#        (be sure to specify 1)
+
+# Register a table and get join messages from robots
+SEND|Register a table|QUEUE|Event.tm=lh-test-0-0|{"event":8,"action":1,"playerid":"79","corrid":"15","replyto":"/queue/tableRegistered8"}
+RECEIVE|Confirm registration|QUEUE|tableRegistered8|{"action":1,"corrid":"15","event":8,"playerid":"79","replyto":"/queue/tableRegistered8","status":true}
+RECEIVE|Startup state dump|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":1,"trigger":{"action":0,"type":"command"}}}
+
+RECEIVE|JOIN by North|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":2,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+RECEIVE|JOIN by East|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":3,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+RECEIVE|JOIN by West|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":4,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+
+# Join South
+SEND|JOIN by South|QUEUE|Event.tb=lh-test-0-1|{"action":1,"id":"79","seat":4,"type":"player"}
+RECEIVE|JOIN by South|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":5,"trigger":{"action":1,"external":false,"id":"79","seat":4,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+
+# Board 1 Bidding
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=lh-test-0-1|{"table":{"trigger":{"action":2,"board":{"dealer":2,"number":1,"vul":1},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":2}}}
+RECEIVE|1H by North|TOPIC|State.tb=lh-test-0-1|{"table":{"tableid":"lh-test-0-1","trigger":{"call":3,"seat":2,"type":"auction"}}}
+RECEIVE|D by East|TOPIC|State.tb=lh-test-0-1|{"table":{"tableid":"lh-test-0-1","trigger":{"call":36,"seat":3,"type":"auction"}}}
+SEND|3H by South|QUEUE|Event.tb=lh-test-0-1|{"call":13,"seat":4,"type":"auction"}
+RECEIVE|3H by South|TOPIC|State.tb=lh-test-0-1|{"table":{"tableid":"lh-test-0-1","trigger":{"call":13,"seat":4,"type":"auction"}}}
+RECEIVE|3S by West|TOPIC|State.tb=lh-test-0-1|{"table":{"tableid":"lh-test-0-1","trigger":{"call":16,"seat":1,"type":"auction"}}}
+RECEIVE|4H by North|TOPIC|State.tb=lh-test-0-1|{"table":{"tableid":"lh-test-0-1","trigger":{"call":18,"seat":2,"type":"auction"}}}
+RECEIVE|4S by East|TOPIC|State.tb=lh-test-0-1|{"table":{"tableid":"lh-test-0-1","trigger":{"call":21,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=lh-test-0-1|{"call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=lh-test-0-1|{"table":{"tableid":"lh-test-0-1","trigger":{"call":38,"seat":4,"type":"auction"}}}
+RECEIVE|P by West|TOPIC|State.tb=lh-test-0-1|{"table":{"tableid":"lh-test-0-1","trigger":{"call":38,"seat":1,"type":"auction"}}}
+RECEIVE|D by North|TOPIC|State.tb=lh-test-0-1|{"table":{"tableid":"lh-test-0-1","trigger":{"call":36,"seat":2,"type":"auction"}}}
+RECEIVE|P by East|TOPIC|State.tb=lh-test-0-1|{"table":{"tableid":"lh-test-0-1","trigger":{"call":38,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=lh-test-0-1|{"call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=lh-test-0-1|{"table":{"tableid":"lh-test-0-1","trigger":{"call":38,"seat":4,"type":"auction"}}}
+RECEIVE|P by West|TOPIC|State.tb=lh-test-0-1|{"table":{"tableid":"lh-test-0-1","trigger":{"call":38,"seat":1,"type":"auction"}}}
+RECEIVE|PHASE TIMER canceled|TOPIC|State.tb=lh-test-0-1|{"table":{"tableid":"lh-test-0-1","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 1 Play
+RECEIVE|Opening lead by North|TOPIC|State.tb=lh-test-0-1|{"table":{"tableid":"lh-test-0-1","trigger":{"card":13,"seat":2,"type":"cardplay"}}}

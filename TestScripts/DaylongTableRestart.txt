@@ -1,0 +1,35 @@
+TEST|Restart Daylong Table
+
+# To debug:
+#    go to Bridge/backend directory and execute
+#        bin/run_setup.sh (kills any existing Sections and Tables and clean the /tmp directory of logfiles)
+#        bin/run_debug_daylong_table.sh (creates lh-test.cfg file and statedump file)
+#    make sure launch.json file, in "Restart Table" section, has the following parameters:
+#        "args": ["-c/tmp/lh-test.cfg", "-tlh-test-0-1", "-r/tmp/statedump_lh-test-0-1.json"]
+#    go to TestingHarness/build directory and execute
+#        ./run_test.sh DaylongTableRestart local 
+#        (after adding any additional messages you may wish to pass for debugging to build/scripts/DaylongTableRestart.txt)   
+#    in "Run and Debug" window, select "Restart Table" and click arrow or press F5 to start debugger
+
+# Get diagnostics
+SEND|Request bdmgr|QUEUE|Event.tb=lh-test-0-1|{"type":"diagnostics","bdmgr":1,"players":1,"replyto":"diagnosticsResult"}
+RECEIVE|Startup state dump (may take some time)|TOPIC|State.tb=lh-test-0-1|{"table":{"trigger":{"action":2,"type":"DManager"},"turn":{"message":"Opening leader: East"}}}
+RECEIVE|Show bdmgr|QUEUE|diagnosticsResult|{"bdmgr":{"round":0}}
+
+RECEIVE|JOIN by North|TOPIC|State.tb=lh-test-0-1|{"table":{"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"Opening leader: East","phase":2,"status":1,"who":3}}}
+RECEIVE|JOIN by East|TOPIC|State.tb=lh-test-0-1|{"table":{"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"Opening leader: East","phase":2,"status":1,"who":3}}}
+RECEIVE|JOIN by West|TOPIC|State.tb=lh-test-0-1|{"table":{"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"Opening leader: East","phase":2,"status":1,"who":3}}}
+
+# Get diagnostics
+SEND|Request bdmgr|QUEUE|Event.tb=lh-test-0-1|{"type":"diagnostics","bdmgr":1,"players":1,"replyto":"diagnosticsResult"}
+RECEIVE|Show bdmgr|QUEUE|diagnosticsResult|{"bdmgr":{"round":0}}
+
+# Board 1 Table 1 - Make Opening lead and claim making 5
+SEND|Opening lead by East|QUEUE|Event.tb=lh-test-0-1|{"card":1,"seat":3,"type":"cardplay"}
+RECEIVE|Opening lead by East|TOPIC|State.tb=lh-test-0-1|{"table":{"tableid":"lh-test-0-1","trigger":{"card":1,"seat":3,"type":"cardplay"}}}
+SEND|Claim 11 tricks by North|QUEUE|Event.tb=lh-test-0-1|{"action":5,"comment":"Marked double squeeze","seat":2,"tricks":11,"type":"command"}
+RECEIVE|Claim 11 tricks by North|TOPIC|State.tb=lh-test-0-1|{"table":{"tableid":"lh-test-0-1","trigger":{"action":5,"comment":"Marked double squeeze","seat":2,"tricks":11,"type":"command"}}}
+SEND|Claim accepted by East|QUEUE|Event.tb=lh-test-0-1|{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by East|TOPIC|State.tb=lh-test-0-1|{"table":{"tableid":"lh-test-0-1","trigger":{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}}}
+SEND|Claim accepted by West|QUEUE|Event.tb=lh-test-0-1|{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by West|TOPIC|State.tb=lh-test-0-1|{"table":{"tableid":"lh-test-0-1","trigger":{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}}}

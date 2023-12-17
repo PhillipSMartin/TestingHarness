@@ -1,0 +1,362 @@
+TEST|Full Tourney
+
+# To test:
+#   go to Bridge/backend directory and execute
+#       bin/run_setup.sh (kills any existing Sections and Tables and clean the /tmp directory of logfiles)
+#       (do not start SessionLauncher)
+#   go to TestingHarness/build directory and execute
+#       ./run_test.sh FullTourney local
+#   go to Bridge/backend directory and execute
+#       bin/run_standard_tourney.sh 
+
+# Receive initial state dumps
+RECEIVE|INITIAL state dump|TOPIC|State.tm=lh-test-0-0|{"id":"lh-test-0","notice":7,"round":1,"seating":[[{"ewno":1,"nsno":2,"tableno":1},{"ewno":3,"nsno":4,"tableno":2}],[{"ewno":2,"nsno":3,"tableno":1},{"ewno":1,"nsno":4,"tableno":2}],[{"ewno":3,"nsno":1,"tableno":1},{"ewno":2,"nsno":4,"tableno":2}]]}
+RECEIVE|Startup state dump|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":1,"tableid":"lh-test-0-1","trigger":{"action":0,"type":"command"},"turn":{"message":""}}}
+RECEIVE|Startup state dump|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":1,"tableid":"lh-test-0-2","trigger":{"action":0,"type":"command"},"turn":{"message":""}}}
+
+# Get diagnostics
+SEND|Request params|QUEUE|Event.tm=lh-test-0-0|{"event":9,"params":1,"replyto":"diagnosticsResult"}
+RECEIVE|Show params|QUEUE|diagnosticsResult|{"params":{"bpr":2}}
+
+# JOIN messages for round 1
+SEND|JOIN by West|QUEUE|Event.tb=lh-test-0-1|{"action":1,"id":"233","seat":1,"type":"player"}
+RECEIVE|JOIN by West|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":2,"tableid":"lh-test-0-1","trigger":{"action":1,"external":false,"id":"233","seat":1,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+SEND|JOIN by East|QUEUE|Event.tb=lh-test-0-1|{"action":1,"id":"79","seat":3,"type":"player"}
+RECEIVE|JOIN by East|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":3,"tableid":"lh-test-0-1","trigger":{"action":1,"external":false,"id":"79","seat":3,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+SEND|JOIN by North|QUEUE|Event.tb=lh-test-0-1|{"action":1,"id":"411","seat":2,"type":"player"}
+RECEIVE|JOIN by North|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":4,"tableid":"lh-test-0-1","trigger":{"action":1,"external":false,"id":"411","seat":2,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+SEND|JOIN by South|QUEUE|Event.tb=lh-test-0-1|{"action":1,"id":"292","seat":4,"type":"player"}
+RECEIVE|JOIN by South|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":5,"tableid":"lh-test-0-1","trigger":{"action":1,"external":false,"id":"292","seat":4,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+SEND|JOIN by West|QUEUE|Event.tb=lh-test-0-2|{"action":1,"id":"444","seat":1,"type":"player"}
+RECEIVE|JOIN by West|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":2,"tableid":"lh-test-0-2","trigger":{"action":1,"external":false,"id":"444","seat":1,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+SEND|JOIN by East|QUEUE|Event.tb=lh-test-0-2|{"action":1,"id":"472","seat":3,"type":"player"}
+RECEIVE|JOIN by East|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":3,"tableid":"lh-test-0-2","trigger":{"action":1,"external":false,"id":"472","seat":3,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+SEND|JOIN by North|QUEUE|Event.tb=lh-test-0-2|{"action":1,"id":"846","seat":2,"type":"player"}
+RECEIVE|JOIN by North|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":4,"tableid":"lh-test-0-2","trigger":{"action":1,"external":false,"id":"846","seat":2,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+SEND|JOIN by South|QUEUE|Event.tb=lh-test-0-2|{"action":1,"id":"847","seat":4,"type":"player"}
+RECEIVE|JOIN by South|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":5,"tableid":"lh-test-0-2","trigger":{"action":1,"external":false,"id":"847","seat":4,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+RECEIVE|SETUP message|TOPIC|State.tm=lh-test-0-0|{"bpr":2,"deals":[{"dealer":2,"number":1,"vul":1},{"dealer":3,"number":2,"vul":2}],"notice":1,"round":1,"rounds":3,"seating":[{"ewno":1,"nsno":2,"tableno":1},{"ewno":3,"nsno":4,"tableno":2}],"tables":2}
+
+# Board 1 Table 1 - Bid to 5C by North
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":6,"tableid":"lh-test-0-1","trigger":{"action":2,"board":{"dealer":2,"number":1,"vul":1},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":2}}}
+SEND|5C by North|QUEUE|Event.tb=lh-test-0-1|{"alert":"","call":21,"seat":2,"type":"auction"}
+RECEIVE|5C by North|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":7,"tableid":"lh-test-0-1","trigger":{"alert":"","call":21,"seat":2,"type":"auction"}}}
+SEND|P by East|QUEUE|Event.tb=lh-test-0-1|{"alert":"","call":38,"seat":3,"type":"auction"}
+RECEIVE|P by East|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":8,"tableid":"lh-test-0-1","trigger":{"alert":"","call":38,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=lh-test-0-1|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":9,"tableid":"lh-test-0-1","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=lh-test-0-1|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":10,"tableid":"lh-test-0-1","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+RECEIVE|PHASE TIMER canceled|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":11,"tableid":"lh-test-0-1","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 1 Table 1 - Make Opening lead and claim making 5
+SEND|Opening lead by East|QUEUE|Event.tb=lh-test-0-1|{"card":1,"seat":3,"type":"cardplay"}
+RECEIVE|Opening lead by East|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":12,"tableid":"lh-test-0-1","trigger":{"card":1,"seat":3,"type":"cardplay"}}}
+SEND|Claim 11 tricks by North|QUEUE|Event.tb=lh-test-0-1|{"action":5,"comment":"Marked double squeeze","seat":2,"tricks":11,"type":"command"}
+RECEIVE|Claim 11 tricks by North|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":13,"tableid":"lh-test-0-1","trigger":{"action":5,"comment":"Marked double squeeze","seat":2,"tricks":11,"type":"command"}}}
+SEND|Claim accepted by East|QUEUE|Event.tb=lh-test-0-1|{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by East|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":14,"tableid":"lh-test-0-1","trigger":{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}}}
+SEND|Claim accepted by West|QUEUE|Event.tb=lh-test-0-1|{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by West|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":15,"tableid":"lh-test-0-1","trigger":{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}}}
+
+# Board 1 Table 2 - Bid to 3NT by North
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":6,"tableid":"lh-test-0-2","trigger":{"action":2,"board":{"dealer":2,"number":1,"vul":1},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":2}}}
+SEND|3N by North|QUEUE|Event.tb=lh-test-0-2|{"alert":"","call":15,"seat":2,"type":"auction"}
+RECEIVE|3N by North|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":7,"tableid":"lh-test-0-2","trigger":{"alert":"","call":15,"seat":2,"type":"auction"}}}
+SEND|P by East|QUEUE|Event.tb=lh-test-0-2|{"alert":"","call":38,"seat":3,"type":"auction"}
+RECEIVE|P by East|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":8,"tableid":"lh-test-0-2","trigger":{"alert":"","call":38,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=lh-test-0-2|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":9,"tableid":"lh-test-0-2","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=lh-test-0-2|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":10,"tableid":"lh-test-0-2","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+RECEIVE|PHASE TIMER canceled|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":11,"tableid":"lh-test-0-2","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 1 Table 2 - Make Opening lead and claim making 4
+SEND|Opening lead by East|QUEUE|Event.tb=lh-test-0-2|{"card":1,"seat":3,"type":"cardplay"}
+RECEIVE|Opening lead by East|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":12,"tableid":"lh-test-0-2","trigger":{"card":1,"seat":3,"type":"cardplay"}}}
+SEND|Claim 10 tricks by North|QUEUE|Event.tb=lh-test-0-2|{"action":5,"comment":"","seat":2,"tricks":10,"type":"command"}
+RECEIVE|Claim 10 tricks by North|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":13,"tableid":"lh-test-0-2","trigger":{"action":5,"comment":"","seat":2,"tricks":10,"type":"command"}}}
+SEND|Claim accepted by East|QUEUE|Event.tb=lh-test-0-2|{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by East|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":14,"tableid":"lh-test-0-2","trigger":{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}}}
+SEND|Claim accepted by West|QUEUE|Event.tb=lh-test-0-2|{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by West|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":15,"tableid":"lh-test-0-2","trigger":{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}}}
+
+# Board 2 Table 1 - Bid to 3NT by East
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":16,"tableid":"lh-test-0-1","trigger":{"action":2,"board":{"dealer":3,"number":2,"vul":2},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":3}}}
+SEND|3N by East|QUEUE|Event.tb=lh-test-0-1|{"alert":"","call":15,"seat":3,"type":"auction"}
+RECEIVE|3N by East|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":17,"tableid":"lh-test-0-1","trigger":{"alert":"","call":15,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=lh-test-0-1|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":18,"tableid":"lh-test-0-1","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=lh-test-0-1|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":19,"tableid":"lh-test-0-1","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+SEND|P by North|QUEUE|Event.tb=lh-test-0-1|{"alert":"","call":38,"seat":2,"type":"auction"}
+RECEIVE|P by North|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":20,"tableid":"lh-test-0-1","trigger":{"alert":"","call":38,"seat":2,"type":"auction"}}}
+RECEIVE|PHASE TIMER expired|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":21,"tableid":"lh-test-0-1","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 2 Table 1 - Make Opening lead and claim making 4
+SEND|Opening lead by South|QUEUE|Event.tb=lh-test-0-1|{"card":2,"seat":4,"type":"cardplay"}
+RECEIVE|Opening lead by South|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":22,"tableid":"lh-test-0-1","trigger":{"card":2,"seat":4,"type":"cardplay"}}}
+SEND|Claim 10 tricks by East|QUEUE|Event.tb=lh-test-0-1|{"action":5,"comment":"","seat":3,"tricks":10,"type":"command"}
+RECEIVE|Claim 10 tricks by East|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":23,"tableid":"lh-test-0-1","trigger":{"action":5,"comment":"","seat":3,"tricks":10,"type":"command"}}}
+SEND|Claim accepted by North|QUEUE|Event.tb=lh-test-0-1|{"action":6,"number":1,"seat":2,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by North|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":24,"tableid":"lh-test-0-1","trigger":{"action":6,"number":1,"seat":2,"reject":false,"type":"command"}}}
+SEND|Claim accepted by South|QUEUE|Event.tb=lh-test-0-1|{"action":6,"number":1,"seat":4,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by South|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":25,"tableid":"lh-test-0-1","trigger":{"action":6,"number":1,"seat":4,"reject":false,"type":"command"}}}
+
+# Board 2 Table 2 - Bid to 3NT by East
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":16,"tableid":"lh-test-0-2","trigger":{"action":2,"board":{"dealer":3,"number":2,"vul":2},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":3}}}
+SEND|3N by East|QUEUE|Event.tb=lh-test-0-2|{"alert":"","call":15,"seat":3,"type":"auction"}
+RECEIVE|3N by East|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":17,"tableid":"lh-test-0-2","trigger":{"alert":"","call":15,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=lh-test-0-2|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":18,"tableid":"lh-test-0-2","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=lh-test-0-2|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":19,"tableid":"lh-test-0-2","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+SEND|P by North|QUEUE|Event.tb=lh-test-0-2|{"alert":"","call":38,"seat":2,"type":"auction"}
+RECEIVE|P by North|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":20,"tableid":"lh-test-0-2","trigger":{"alert":"","call":38,"seat":2,"type":"auction"}}}
+RECEIVE|PHASE TIMER expired|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":21,"tableid":"lh-test-0-2","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 2 Table 2 - Make Opening lead and claim making 7
+SEND|Opening lead by North|QUEUE|Event.tb=lh-test-0-2|{"card":2,"seat":4,"type":"cardplay"}
+RECEIVE|Opening lead by North|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":22,"tableid":"lh-test-0-2","trigger":{"card":2,"seat":4,"type":"cardplay"}}}
+SEND|Claim 12 tricks by East|QUEUE|Event.tb=lh-test-0-2|{"action":5,"comment":"","seat":3,"tricks":12,"type":"command"}
+RECEIVE|Claim 12 tricks by East|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":23,"tableid":"lh-test-0-2","trigger":{"action":5,"comment":"","seat":3,"tricks":12,"type":"command"}}}
+SEND|Claim accepted by North|QUEUE|Event.tb=lh-test-0-2|{"action":6,"number":1,"seat":2,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by North|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":24,"tableid":"lh-test-0-2","trigger":{"action":6,"number":1,"seat":2,"reject":false,"type":"command"}}}
+SEND|Claim accepted by South|QUEUE|Event.tb=lh-test-0-2|{"action":6,"number":1,"seat":4,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by South|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":25,"tableid":"lh-test-0-2","trigger":{"action":6,"number":1,"seat":4,"reject":false,"type":"command"}}}
+
+# Get diagnostics
+SEND|Request params|QUEUE|Event.tm=lh-test-0-0|{"event":9,"all":1,"replyto":"diagnosticsResult"}
+RECEIVE|Show params|QUEUE|diagnosticsResult|{"params":{"bpr":2}}
+
+# End of round 1
+RECEIVE|EOR message|TOPIC|State.tm=lh-test-0-0|{"notice":5,"round":1}
+RECEIVE|Scorer message|TOPIC|State.sc=lh-test|{"notice":11,"tally":[{"count":1,"iid":1,"raw":0.0,"total":0.0},{"count":1,"iid":2,"raw":100.0,"total":100.0},{"count":1,"iid":3,"raw":0.0,"total":0.0},{"count":1,"iid":4,"raw":100.0,"total":100.0}]}
+RECEIVE|Scorer message|TOPIC|State.sc=lh-test|{"notice":11,"tally":[{"count":2,"iid":1,"raw":100.0,"total":50.0},{"count":2,"iid":2,"raw":100.0,"total":50.0},{"count":2,"iid":3,"raw":100.0,"total":50.0},{"count":2,"iid":4,"raw":100.0,"total":50.0}]}
+RECEIVE|MOVE message|TOPIC|State.tm=lh-test-0-0|{"bpr":2,"deals":[{"dealer":4,"number":3,"vul":3},{"dealer":1,"number":4,"vul":4}],"notice":3,"round":2,"seating":[{"ewno":2,"nsno":3,"tableno":1},{"ewno":1,"nsno":4,"tableno":2}]}
+RECEIVE|Table 1 MOVE message|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":26,"tableid":"lh-test-0-1","trigger":{"action":4,"round":2,"tableid":"lh-test-0-1","type":"command"}}}
+RECEIVE|Table 2 MOVE message|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":26,"tableid":"lh-test-0-2","trigger":{"action":4,"round":2,"tableid":"lh-test-0-2","type":"command"}}}
+
+# Get diagnostics
+SEND|Request params|QUEUE|Event.tm=lh-test-0-0|{"event":9,"all":1,"replyto":"diagnosticsResult"}
+RECEIVE|Show state|QUEUE|diagnosticsResult|{"round":2}
+
+# Join messages for round 2
+SEND|JOIN by West|QUEUE|Event.tb=lh-test-0-1|{"action":1,"id":"411","seat":1,"type":"player"}
+RECEIVE|JOIN by West|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":27,"tableid":"lh-test-0-1","trigger":{"action":1,"external":false,"id":"411","seat":1,"type":"player"},"turn":{"message":"No active deal","phase":0,"status":0}}}
+SEND|JOIN by East|QUEUE|Event.tb=lh-test-0-1|{"action":1,"id":"292","seat":3,"type":"player"}
+RECEIVE|JOIN by East|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":28,"tableid":"lh-test-0-1","trigger":{"action":1,"external":false,"id":"292","seat":3,"type":"player"},"turn":{"message":"No active deal","phase":0,"status":0}}}
+SEND|JOIN by North|QUEUE|Event.tb=lh-test-0-1|{"action":1,"id":"444","seat":2,"type":"player"}
+RECEIVE|JOIN by North|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":29,"tableid":"lh-test-0-1","trigger":{"action":1,"external":false,"id":"444","seat":2,"type":"player"},"turn":{"message":"No active deal","phase":0,"status":0}}}
+SEND|JOIN by South|QUEUE|Event.tb=lh-test-0-1|{"action":1,"id":"472","seat":4,"type":"player"}
+RECEIVE|JOIN by South|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":30,"tableid":"lh-test-0-1","trigger":{"action":1,"external":false,"id":"472","seat":4,"type":"player"},"turn":{"message":"No active deal","phase":0,"status":0}}}
+SEND|JOIN by West|QUEUE|Event.tb=lh-test-0-2|{"action":1,"id":"233","seat":1,"type":"player"}
+RECEIVE|JOIN by West|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":27,"tableid":"lh-test-0-2","trigger":{"action":1,"external":false,"id":"233","seat":1,"type":"player"},"turn":{"message":"No active deal","phase":0,"status":0}}}
+SEND|JOIN by East|QUEUE|Event.tb=lh-test-0-2|{"action":1,"id":"79","seat":3,"type":"player"}
+RECEIVE|JOIN by East|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":28,"tableid":"lh-test-0-2","trigger":{"action":1,"external":false,"id":"79","seat":3,"type":"player"},"turn":{"message":"No active deal","phase":0,"status":0}}}
+
+# Board 3 Table 1 - Bid to 3H  by South
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":31,"tableid":"lh-test-0-1","trigger":{"action":2,"board":{"dealer":4,"number":3,"vul":3},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":4}}}
+SEND|3H by South|QUEUE|Event.tb=lh-test-0-1|{"alert":"","call":13,"seat":4,"type":"auction"}
+RECEIVE|3H by South|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":32,"tableid":"lh-test-0-1","trigger":{"alert":"","call":13,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=lh-test-0-1|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":33,"tableid":"lh-test-0-1","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+SEND|P by North|QUEUE|Event.tb=lh-test-0-1|{"alert":"","call":38,"seat":2,"type":"auction"}
+RECEIVE|P by North|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":34,"tableid":"lh-test-0-1","trigger":{"alert":"","call":38,"seat":2,"type":"auction"}}}
+SEND|P by East|QUEUE|Event.tb=lh-test-0-1|{"alert":"","call":38,"seat":3,"type":"auction"}
+RECEIVE|P by East|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":35,"tableid":"lh-test-0-1","trigger":{"alert":"","call":38,"seat":3,"type":"auction"}}}
+RECEIVE|PHASE TIMER canceled|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":36,"tableid":"lh-test-0-1","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 3 Table 1 - Make Opening lead and claim down 3
+SEND|Opening lead by West|QUEUE|Event.tb=lh-test-0-1|{"card":5,"seat":1,"type":"cardplay"}
+RECEIVE|Opening lead by West|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":37,"tableid":"lh-test-0-1","trigger":{"card":5,"seat":1,"type":"cardplay"}}}
+SEND|Claim 6 tricks by South|QUEUE|Event.tb=lh-test-0-1|{"action":5,"comment":"","seat":4,"tricks":6,"type":"command"}
+RECEIVE|Claim 6 tricks by South|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":38,"tableid":"lh-test-0-1","trigger":{"action":5,"comment":"","seat":4,"tricks":6,"type":"command"}}}
+SEND|Claim accepted by East|QUEUE|Event.tb=lh-test-0-1|{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by East|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":39,"tableid":"lh-test-0-1","trigger":{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}}}
+SEND|Claim accepted by West|QUEUE|Event.tb=lh-test-0-1|{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by West|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":40,"tableid":"lh-test-0-1","trigger":{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}}}
+
+# Board 3 Table 2 - Bid to 3NT by South
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":29,"tableid":"lh-test-0-2","trigger":{"action":2,"board":{"dealer":4,"number":3,"vul":3},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":4}}}
+SEND|3N by South|QUEUE|Event.tb=lh-test-0-2|{"alert":"","call":15,"seat":4,"type":"auction"}
+RECEIVE|3N by South|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":30,"tableid":"lh-test-0-2","trigger":{"alert":"","call":15,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=lh-test-0-2|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":31,"tableid":"lh-test-0-2","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+SEND|P by North|QUEUE|Event.tb=lh-test-0-2|{"alert":"","call":38,"seat":2,"type":"auction"}
+RECEIVE|P by North|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":32,"tableid":"lh-test-0-2","trigger":{"alert":"","call":38,"seat":2,"type":"auction"}}}
+SEND|P by East|QUEUE|Event.tb=lh-test-0-2|{"alert":"","call":38,"seat":3,"type":"auction"}
+RECEIVE|P by East|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":33,"tableid":"lh-test-0-2","trigger":{"alert":"","call":38,"seat":3,"type":"auction"}}}
+RECEIVE|PHASE TIMER canceled|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":34,"tableid":"lh-test-0-2","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 3 Table 2 - Make Opening lead and claim making 6
+SEND|Opening lead by West|QUEUE|Event.tb=lh-test-0-2|{"card":5,"seat":1,"type":"cardplay"}
+RECEIVE|Opening lead by West|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":35,"tableid":"lh-test-0-2","trigger":{"card":5,"seat":1,"type":"cardplay"}}}
+SEND|Claim 12 tricks by South|QUEUE|Event.tb=lh-test-0-2|{"action":5,"comment":"","seat":4,"tricks":12,"type":"command"}
+RECEIVE|Claim 12 tricks by South|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":36,"tableid":"lh-test-0-2","trigger":{"action":5,"comment":"","seat":4,"tricks":12,"type":"command"}}}
+SEND|Claim accepted by East|QUEUE|Event.tb=lh-test-0-2|{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by East|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":37,"tableid":"lh-test-0-2","trigger":{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}}}
+SEND|Claim accepted by West|QUEUE|Event.tb=lh-test-0-2|{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by West|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":38,"tableid":"lh-test-0-2","trigger":{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}}}
+
+# Board 4 Table 1 - Bid to 2H by West
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":41,"tableid":"lh-test-0-1","trigger":{"action":2,"board":{"dealer":1,"number":4,"vul":4},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":1}}}
+SEND|2H by West|QUEUE|Event.tb=lh-test-0-1|{"alert":"","call":8,"seat":1,"type":"auction"}
+RECEIVE|2H by West|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":42,"tableid":"lh-test-0-1","trigger":{"alert":"","call":8,"seat":1,"type":"auction"}}}
+SEND|P by North|QUEUE|Event.tb=lh-test-0-1|{"alert":"","call":38,"seat":2,"type":"auction"}
+RECEIVE|P by North|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":43,"tableid":"lh-test-0-1","trigger":{"alert":"","call":38,"seat":2,"type":"auction"}}}
+SEND|P by East|QUEUE|Event.tb=lh-test-0-1|{"alert":"","call":38,"seat":3,"type":"auction"}
+RECEIVE|P by East|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":44,"tableid":"lh-test-0-1","trigger":{"alert":"","call":38,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=lh-test-0-1|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":45,"tableid":"lh-test-0-1","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+RECEIVE|PHASE TIMER expired|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":46,"tableid":"lh-test-0-1","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 4 Table 1 - Make Opening lead and claim down 2
+SEND|Opening lead by North|QUEUE|Event.tb=lh-test-0-1|{"card":0,"seat":2,"type":"cardplay"}
+RECEIVE|Opening lead by North|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":47,"tableid":"lh-test-0-1","trigger":{"card":0,"seat":2,"type":"cardplay"}}}
+SEND|Claim 6 tricks by West|QUEUE|Event.tb=lh-test-0-1|{"action":5,"comment":"","seat":1,"tricks":6,"type":"command"}
+RECEIVE|Claim 6 tricks by West|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":48,"tableid":"lh-test-0-1","trigger":{"action":5,"comment":"","seat":1,"tricks":6,"type":"command"}}}
+SEND|Claim accepted by North|QUEUE|Event.tb=lh-test-0-1|{"action":6,"number":1,"seat":2,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by North|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":49,"tableid":"lh-test-0-1","trigger":{"action":6,"number":1,"seat":2,"reject":false,"type":"command"}}}
+SEND|Claim accepted by South|QUEUE|Event.tb=lh-test-0-1|{"action":6,"number":1,"seat":4,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by South|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":50,"tableid":"lh-test-0-1","trigger":{"action":6,"number":1,"seat":4,"reject":false,"type":"command"}}}
+
+# Board 4 Table 2 - Bid to 1NT by West
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":39,"tableid":"lh-test-0-2","trigger":{"action":2,"board":{"dealer":1,"number":4,"vul":4},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":1}}}
+SEND|2H by West|QUEUE|Event.tb=lh-test-0-2|{"alert":"","call":5,"seat":1,"type":"auction"}
+RECEIVE|2H by West|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":40,"tableid":"lh-test-0-2","trigger":{"alert":"","call":5,"seat":1,"type":"auction"}}}
+SEND|P by North|QUEUE|Event.tb=lh-test-0-2|{"alert":"","call":38,"seat":2,"type":"auction"}
+RECEIVE|P by North|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":41,"tableid":"lh-test-0-2","trigger":{"alert":"","call":38,"seat":2,"type":"auction"}}}
+SEND|P by East|QUEUE|Event.tb=lh-test-0-2|{"alert":"","call":38,"seat":3,"type":"auction"}
+RECEIVE|P by East|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":42,"tableid":"lh-test-0-2","trigger":{"alert":"","call":38,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=lh-test-0-2|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":43,"tableid":"lh-test-0-2","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+RECEIVE|PHASE TIMER expired|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":44,"tableid":"lh-test-0-2","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 4 Table 2 - Make Opening lead and making 1
+SEND|Opening lead by North|QUEUE|Event.tb=lh-test-0-2|{"card":0,"seat":2,"type":"cardplay"}
+RECEIVE|Opening lead by North|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":45,"tableid":"lh-test-0-2","trigger":{"card":0,"seat":2,"type":"cardplay"}}}
+SEND|Claim 7 tricks by West|QUEUE|Event.tb=lh-test-0-2|{"action":5,"comment":"","seat":1,"tricks":7,"type":"command"}
+RECEIVE|Claim 7 tricks by West|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":46,"tableid":"lh-test-0-2","trigger":{"action":5,"comment":"","seat":1,"tricks":7,"type":"command"}}}
+SEND|Claim accepted by North|QUEUE|Event.tb=lh-test-0-2|{"action":6,"number":1,"seat":2,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by North|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":47,"tableid":"lh-test-0-2","trigger":{"action":6,"number":1,"seat":2,"reject":false,"type":"command"}}}
+SEND|Claim accepted by South|QUEUE|Event.tb=lh-test-0-2|{"action":6,"number":1,"seat":4,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by South|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":48,"tableid":"lh-test-0-2","trigger":{"action":6,"number":1,"seat":4,"reject":false,"type":"command"}}}
+
+# End of round 2
+RECEIVE|EOR message|TOPIC|State.tm=lh-test-0-0|{"notice":5,"round":2}
+RECEIVE|Scorer message|TOPIC|State.sc=lh-test|{"notice":11,"tally":[{"count":3,"iid":1,"raw":200.0,"total":66.66666666666667},{"count":3,"iid":2,"raw":100.0,"total":33.333333333333336},{"count":3,"iid":3,"raw":100.0,"total":33.333333333333336},{"count":3,"iid":4,"raw":200.0,"total":66.66666666666667}]}
+RECEIVE|Scorer message|TOPIC|State.sc=lh-test|{"notice":11,"tally":[{"count":4,"iid":1,"raw":200.0,"total":50.0},{"count":4,"iid":2,"raw":200.0,"total":50.0},{"count":4,"iid":3,"raw":200.0,"total":50.0},{"count":4,"iid":4,"raw":200.0,"total":50.0}]}
+RECEIVE|MOVE message|TOPIC|State.tm=lh-test-0-0|{"bpr":2,"deals":[{"dealer":2,"number":5,"vul":2},{"dealer":3,"number":6,"vul":3}],"notice":3,"round":3,"seating":[{"ewno":3,"nsno":1,"tableno":1},{"ewno":2,"nsno":4,"tableno":2}]}
+RECEIVE|Table 1 MOVE message|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":51,"tableid":"lh-test-0-1","trigger":{"action":4,"round":3,"tableid":"lh-test-0-1","type":"command"}}}
+RECEIVE|Table 2 MOVE message|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":49,"tableid":"lh-test-0-2","trigger":{"action":4,"round":3,"tableid":"lh-test-0-2","type":"command"}}}
+
+# Join messages for round 3
+SEND|JOIN by West|QUEUE|Event.tb=lh-test-0-1|{"action":1,"id":"444","seat":1,"type":"player"}
+RECEIVE|JOIN by West|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":52,"tableid":"lh-test-0-1","trigger":{"action":1,"external":false,"id":"444","seat":1,"type":"player"},"turn":{"message":"No active deal","phase":0,"status":0}}}
+SEND|JOIN by East|QUEUE|Event.tb=lh-test-0-1|{"action":1,"id":"472","seat":3,"type":"player"}
+RECEIVE|JOIN by East|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":53,"tableid":"lh-test-0-1","trigger":{"action":1,"external":false,"id":"472","seat":3,"type":"player"},"turn":{"message":"No active deal","phase":0,"status":0}}}
+SEND|JOIN by North|QUEUE|Event.tb=lh-test-0-1|{"action":1,"id":"233","seat":2,"type":"player"}
+RECEIVE|JOIN by North|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":54,"tableid":"lh-test-0-1","trigger":{"action":1,"external":false,"id":"233","seat":2,"type":"player"},"turn":{"message":"No active deal","phase":0,"status":0}}}
+SEND|JOIN by South|QUEUE|Event.tb=lh-test-0-1|{"action":1,"id":"79","seat":4,"type":"player"}
+RECEIVE|JOIN by South|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":55,"tableid":"lh-test-0-1","trigger":{"action":1,"external":false,"id":"79","seat":4,"type":"player"},"turn":{"message":"No active deal","phase":0,"status":0}}}
+SEND|JOIN by West|QUEUE|Event.tb=lh-test-0-2|{"action":1,"id":"411","seat":1,"type":"player"}
+RECEIVE|JOIN by West|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":50,"tableid":"lh-test-0-2","trigger":{"action":1,"external":false,"id":"411","seat":1,"type":"player"},"turn":{"message":"No active deal","phase":0,"status":0}}}
+SEND|JOIN by East|QUEUE|Event.tb=lh-test-0-2|{"action":1,"id":"292","seat":3,"type":"player"}
+RECEIVE|JOIN by East|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":51,"tableid":"lh-test-0-2","trigger":{"action":1,"external":false,"id":"292","seat":3,"type":"player"},"turn":{"message":"No active deal","phase":0,"status":0}}}
+
+# Board 5 Table 1 - Bid to 4H by North
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":56,"tableid":"lh-test-0-1","trigger":{"action":2,"board":{"dealer":2,"number":5,"vul":2},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":2}}}
+SEND|4H by North|QUEUE|Event.tb=lh-test-0-1|{"alert":"","call":18,"seat":2,"type":"auction"}
+RECEIVE|4H by North|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":57,"tableid":"lh-test-0-1","trigger":{"alert":"","call":18,"seat":2,"type":"auction"}}}
+SEND|P by East|QUEUE|Event.tb=lh-test-0-1|{"alert":"","call":38,"seat":3,"type":"auction"}
+RECEIVE|P by East|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":58,"tableid":"lh-test-0-1","trigger":{"alert":"","call":38,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=lh-test-0-1|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":59,"tableid":"lh-test-0-1","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=lh-test-0-1|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":60,"tableid":"lh-test-0-1","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+RECEIVE|PHASE TIMER canceled|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":61,"tableid":"lh-test-0-1","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 5 Table 1 - Make Opening lead and claim making 4
+SEND|Opening lead by East|QUEUE|Event.tb=lh-test-0-1|{"card":1,"seat":3,"type":"cardplay"}
+RECEIVE|Opening lead by East|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":62,"tableid":"lh-test-0-1","trigger":{"card":1,"seat":3,"type":"cardplay"}}}
+SEND|Claim 10 tricks by North|QUEUE|Event.tb=lh-test-0-1|{"action":5,"comment":"","seat":2,"tricks":10,"type":"command"}
+RECEIVE|Claim 10 tricks by North|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":63,"tableid":"lh-test-0-1","trigger":{"action":5,"comment":"","seat":2,"tricks":10,"type":"command"}}}
+SEND|Claim accepted by East|QUEUE|Event.tb=lh-test-0-1|{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by East|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":64,"tableid":"lh-test-0-1","trigger":{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}}}
+SEND|Claim accepted by West|QUEUE|Event.tb=lh-test-0-1|{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by West|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":65,"tableid":"lh-test-0-1","trigger":{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}}}
+
+# Board 5 Table 2 - Bid to 1NT by North
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":52,"tableid":"lh-test-0-2","trigger":{"action":2,"board":{"dealer":2,"number":5,"vul":2},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":2}}}
+SEND|1N by North|QUEUE|Event.tb=lh-test-0-2|{"alert":"","call":5,"seat":2,"type":"auction"}
+RECEIVE|1N by North|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":53,"tableid":"lh-test-0-2","trigger":{"alert":"","call":5,"seat":2,"type":"auction"}}}
+SEND|P by East|QUEUE|Event.tb=lh-test-0-2|{"alert":"","call":38,"seat":3,"type":"auction"}
+RECEIVE|P by East|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":54,"tableid":"lh-test-0-2","trigger":{"alert":"","call":38,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=lh-test-0-2|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":55,"tableid":"lh-test-0-2","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=lh-test-0-2|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":56,"tableid":"lh-test-0-2","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+RECEIVE|PHASE TIMER canceled|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":57,"tableid":"lh-test-0-2","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 5 Table 2 - Make Opening lead and claim down 1
+SEND|Opening lead by East|QUEUE|Event.tb=lh-test-0-2|{"card":1,"seat":3,"type":"cardplay"}
+RECEIVE|Opening lead by East|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":58,"tableid":"lh-test-0-2","trigger":{"card":1,"seat":3,"type":"cardplay"}}}
+SEND|Claim 6 tricks by North|QUEUE|Event.tb=lh-test-0-2|{"action":5,"comment":"","seat":2,"tricks":6,"type":"command"}
+RECEIVE|Claim 6 tricks by North|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":59,"tableid":"lh-test-0-2","trigger":{"action":5,"comment":"","seat":2,"tricks":6,"type":"command"}}}
+SEND|Claim accepted by East|QUEUE|Event.tb=lh-test-0-2|{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by East|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":60,"tableid":"lh-test-0-2","trigger":{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}}}
+SEND|Claim accepted by West|QUEUE|Event.tb=lh-test-0-2|{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by West|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":61,"tableid":"lh-test-0-2","trigger":{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}}}
+
+# Board 6 Table 1 - Bid to 3NT by East
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":66,"tableid":"lh-test-0-1","trigger":{"action":2,"board":{"dealer":3,"number":6,"vul":3},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":3}}}
+SEND|3N by East|QUEUE|Event.tb=lh-test-0-1|{"alert":"","call":15,"seat":3,"type":"auction"}
+RECEIVE|3N by East|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":67,"tableid":"lh-test-0-1","trigger":{"alert":"","call":15,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=lh-test-0-1|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":68,"tableid":"lh-test-0-1","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=lh-test-0-1|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":69,"tableid":"lh-test-0-1","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+SEND|P by North|QUEUE|Event.tb=lh-test-0-1|{"alert":"","call":38,"seat":2,"type":"auction"}
+RECEIVE|P by North|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":70,"tableid":"lh-test-0-1","trigger":{"alert":"","call":38,"seat":2,"type":"auction"}}}
+RECEIVE|PHASE TIMER expired|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":71,"tableid":"lh-test-0-1","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 6 Table 1 - Make Opening lead and claim making 4
+SEND|Opening lead by South|QUEUE|Event.tb=lh-test-0-1|{"card":2,"seat":4,"type":"cardplay"}
+RECEIVE|Opening lead by South|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":72,"tableid":"lh-test-0-1","trigger":{"card":2,"seat":4,"type":"cardplay"}}}
+SEND|Claim 10 tricks by East|QUEUE|Event.tb=lh-test-0-1|{"action":5,"comment":"","seat":3,"tricks":10,"type":"command"}
+RECEIVE|Claim 10 tricks by East|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":73,"tableid":"lh-test-0-1","trigger":{"action":5,"comment":"","seat":3,"tricks":10,"type":"command"}}}
+SEND|Claim accepted by North|QUEUE|Event.tb=lh-test-0-1|{"action":6,"number":1,"seat":2,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by North|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":74,"tableid":"lh-test-0-1","trigger":{"action":6,"number":1,"seat":2,"reject":false,"type":"command"}}}
+SEND|Claim accepted by South|QUEUE|Event.tb=lh-test-0-1|{"action":6,"number":1,"seat":4,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by South|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":75,"tableid":"lh-test-0-1","trigger":{"action":6,"number":1,"seat":4,"reject":false,"type":"command"}}}
+
+# Board 6 Table 2 - Bid to 3NT by East
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":62,"tableid":"lh-test-0-2","trigger":{"action":2,"board":{"dealer":3,"number":6,"vul":3},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":3}}}
+SEND|3N by East|QUEUE|Event.tb=lh-test-0-2|{"alert":"","call":15,"seat":3,"type":"auction"}
+RECEIVE|3N by East|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":63,"tableid":"lh-test-0-2","trigger":{"alert":"","call":15,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=lh-test-0-2|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":64,"tableid":"lh-test-0-2","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=lh-test-0-2|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":65,"tableid":"lh-test-0-2","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+SEND|P by North|QUEUE|Event.tb=lh-test-0-2|{"alert":"","call":38,"seat":2,"type":"auction"}
+RECEIVE|P by North|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":66,"tableid":"lh-test-0-2","trigger":{"alert":"","call":38,"seat":2,"type":"auction"}}}
+RECEIVE|PHASE TIMER expired|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":67,"tableid":"lh-test-0-2","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 6 Table 2 - Make Opening lead and claim making 5
+SEND|Opening lead by North|QUEUE|Event.tb=lh-test-0-2|{"card":2,"seat":4,"type":"cardplay"}
+RECEIVE|Opening lead by North|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":68,"tableid":"lh-test-0-2","trigger":{"card":2,"seat":4,"type":"cardplay"}}}
+SEND|Claim 11 tricks by East|QUEUE|Event.tb=lh-test-0-2|{"action":5,"comment":"","seat":3,"tricks":11,"type":"command"}
+RECEIVE|Claim 11 tricks by East|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":69,"tableid":"lh-test-0-2","trigger":{"action":5,"comment":"","seat":3,"tricks":11,"type":"command"}}}
+SEND|Claim accepted by North|QUEUE|Event.tb=lh-test-0-2|{"action":6,"number":1,"seat":2,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by North|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":70,"tableid":"lh-test-0-2","trigger":{"action":6,"number":1,"seat":2,"reject":false,"type":"command"}}}
+SEND|Claim accepted by South|QUEUE|Event.tb=lh-test-0-2|{"action":6,"number":1,"seat":4,"reject":false,"type":"command"}
+RECEIVE|Claim accepted by South|TOPIC|State.tb=lh-test-0-2|{"table":{"seqnum":71,"tableid":"lh-test-0-2","trigger":{"action":6,"number":1,"seat":4,"reject":false,"type":"command"}}}
+
+# End of tournament
+RECEIVE|EOT message|TOPIC|State.tm=lh-test-0-0|{"notice":4,"round":4}
+RECEIVE|Scorer message|TOPIC|State.sc=lh-test|{"notice":11,"tally":[{"count":5,"iid":1,"raw":300.0,"total":60.0},{"count":5,"iid":2,"raw":300.0,"total":60.0},{"count":5,"iid":3,"raw":200.0,"total":40.0},{"count":5,"iid":4,"raw":200.0,"total":40.0}]}
+RECEIVE|Scorer message|TOPIC|State.sc=lh-test|{"notice":11,"tally":[{"count":6,"iid":1,"raw":400.0,"total":66.66666666666667},{"count":6,"iid":2,"raw":400.0,"total":66.66666666666667},{"count":6,"iid":3,"raw":200.0,"total":33.333333333333336},{"count":6,"iid":4,"raw":200.0,"total":33.333333333333336}]}
+RECEIVE|Scorer message|TOPIC|State.sc=lh-test|{"notice":13,"tally":[{"count":6,"iid":1,"raw":400.0,"total":66.66666666666667},{"count":6,"iid":2,"raw":400.0,"total":66.66666666666667},{"count":6,"iid":3,"raw":200.0,"total":33.333333333333336},{"count":6,"iid":4,"raw":200.0,"total":33.333333333333336}]}
+RECEIVE|Table 1 EOT message|TOPIC|State.tb=lh-test-0-1|{"table":{"trigger":{"action":7}}}
+RECEIVE|Table 2 EOT message|TOPIC|State.tb=lh-test-0-2|{"table":{"trigger":{"action":7}}}

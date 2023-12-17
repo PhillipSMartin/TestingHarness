@@ -1,0 +1,11 @@
+TEST|Start Tourney
+# Launch
+SEND|Launch tournament|QUEUE|Q.SessionLaunch|{"bpr":1,"corrid":"298","flags":0,"form":"MP","histkey":"q:dealHistory:all","id":"lh-test","mvmt":"MITCHELL","pairs":8,"replyto":"/queue/tournamentLaunched8","resultkey":"q:tournamentResult:all","rounds":1,"sections":2,"tables":4,"title":"shakeout727","tpb":420000}
+RECEIVE|Launch reply|QUEUE|tournamentLaunched8|{"corrid":"298","status":true}
+
+# Receive initial state dumps
+RECEIVE|INITIAL state dump (can take a few minutes)|TOPIC|State.tm=%s-0-0|{"notice":7,"round":1}
+RECEIVE|Startup state dump|TOPIC|State.tb=%s-0-1|{"table":{"seqnum":1,"trigger":{"action":0,"type":"command"},"turn":{"message":""}}}
+RECEIVE|Startup state dump|TOPIC|State.tb=%s-0-2|{"table":{"seqnum":1,"trigger":{"action":0,"type":"command"},"turn":{"message":""}}}
+RECEIVE|Startup state dump|TOPIC|State.tb=%s-1-1|{"table":{"seqnum":1,"trigger":{"action":0,"type":"command"},"turn":{"message":""}}}
+RECEIVE|Startup state dump|TOPIC|State.tb=%s-1-2|{"table":{"seqnum":1,"trigger":{"action":0,"type":"command"},"turn":{"message":""}}}

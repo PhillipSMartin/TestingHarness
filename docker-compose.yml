@@ -1,0 +1,28 @@
+version: "2.4"
+
+networks:
+  amq-bridge:
+    driver: bridge
+
+services:
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: 643787032379.dkr.ecr.us-east-2.amazonaws.com/swan-games/testingharness:${APP_VERSION}
+    networks:
+      - amq-bridge
+    volumes:
+      - /dockerlogs:/tmp
+    depends_on:
+      - "activemq"
+    command: ["./wait-for-it.sh", "activemq:8161", "--", "./TestingHarness", "-q tcp://activemq:61616", "-f TestScript.txt"]
+
+  activemq:
+    image: 643787032379.dkr.ecr.us-east-2.amazonaws.com/swan-games/activemq:latest
+    ports:
+      - 8161:8161
+      - 61616:61616
+      - 61613:61613
+    networks:
+      - amq-bridge

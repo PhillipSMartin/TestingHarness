@@ -1,0 +1,17 @@
+TEST|Launch Large Daylong
+
+# To test:
+#   go to Bridge/backend directory and execute
+#       bin/run_setup.sh (kills any existing Sections and Tables and clean the /tmp directory of logfiles)
+#       bin/run_SessionLauncher.sh (starts the Launcher process)
+#       bin/run_LaunchScorer.sh (starts the Scorer service)
+#   go to TestingHarness/build directory and execute
+#       ./run_test.sh LaunchLargeDaylong local 
+
+# Launch
+SEND|Launch tournament|QUEUE|Q.SessionLaunch|{"bpr":4,"corrid":"25","besthand":true,"endtime":"23:59","poolsize":2,"flags":0,"form":"M","histkey":"q:dealHistory:all","id":"lh-test","replyto":"/queue/tournamentLaunched8","resultkey":"q:tournamentResult:all","title":"Test"}
+RECEIVE|Launch reply|QUEUE|tournamentLaunched8|{"corrid":"25","status":true}
+
+# Register many tables
+SEND|Register tables|QUEUE|Event.tm=%s-0-0|{"event":8,"action":1,"playerid":"player","tables":50,"robot":true,"corrid":"15","replyto":"/queue/tableRegistered8"}
+RECEIVE|Recorder EOR message|TOPIC|State.sc=%s|{"action":5,"round":2,"type":"DManager"}

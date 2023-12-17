@@ -1,0 +1,22 @@
+TEST|Zero-Table Daylong Tourney 
+
+# To test:
+#    go to Bridge/backend directory and execute
+#        bin/run_setup.sh (kills any existing Sections and Tables and clean the /tmp directory of logfiles)
+#        (do not start SessionLauncher)
+#    go to TestingHarness/build directory and execute
+#        ./run_test.sh ZeroTableDaylong local
+#    go to Bridge/backend directory and execute
+#        bin/run_daylong_tourney.sh
+#        (be sure to specify 1)
+
+
+# Send Timeout
+SEND|Force Timeout|QUEUE|Event.tm=lh-test-0-0|{"event":8,"action":4}
+RECEIVE|Timeout Section|TOPIC|State.tm=lh-test-0-0|{"action":13,"external":true,"notice":10,"type":"timer"}
+RECEIVE|EOR state dump|TOPIC|State.tm=lh-test-0-0|{"notice":18,"trigger":{"event":8,"action":4}}
+RECEIVE|EOT state dump|TOPIC|State.tm=lh-test-0-0|{"notice":18,"trigger":{"event":8,"action":5}}
+
+# EOT Sent to Recorder
+RECEIVE|Recorder - EOT|TOPIC|State.sc=lh-test|{"notice":4,"corrid":"25","id":"lh-test-0","roster":[],"round":2,"secno":0}
+RECEIVE|Final message|TOPIC|State.tm=lh-test-0-0|{"notice":8,"id":"lh-test-0"}

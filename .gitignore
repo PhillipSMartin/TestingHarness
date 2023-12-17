@@ -1,0 +1,9 @@
+build
+*.log
+core.*
+CMakeFiles/*
+*.cmake
+CMakeCache.txt
+*.tcl
+Makefile
+TestResults/**

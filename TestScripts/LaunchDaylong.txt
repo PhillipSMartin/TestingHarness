@@ -1,0 +1,53 @@
+TEST|Launch Daylong
+
+# To test:
+#   go to Bridge/backend directory and execute
+#       bin/run_setup.sh (kills any existing Sections and Tables and clean the /tmp directory of logfiles)
+#       bin/run_all_launch_tests.sh (starts the Launcher and Scorer)
+#   go to TestingHarness/build directory and execute
+#       ./run_test.sh LaunchDaylong local 
+
+# Launch
+SEND|Launch tournament|QUEUE|Q.SessionLaunch|{"bpr":2,"corrid":"25","besthand":true,"endtime":"23:59","poolsize":4,"flags":0,"form":"M","histkey":"q:dealHistory:all","id":"lh-test","replyto":"/queue/tournamentLaunched8","resultkey":"q:tournamentResult:all","title":"Test"}
+RECEIVE|Launch reply|QUEUE|tournamentLaunched8|{"corrid":"25","status":true}
+
+# Register a table and get join messages from robots
+SEND|Register a table|QUEUE|Event.tm=%s-0-0|{"event":8,"action":1,"playerid":"79","corrid":"15","replyto":"/queue/tableRegistered8"}
+RECEIVE|Confirm registration|QUEUE|tableRegistered8|{"status":true,"corrid":"15","iid":1}
+RECEIVE|Startup state dump|TOPIC|State.tb=%s-0-1|{"table":{"seqnum":1,"trigger":{"action":0,"type":"command"},"turn":{"message":""}}}
+
+RECEIVE|JOIN by North|TOPIC|State.tb=%s-0-1|{"table":{"seqnum":2,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+RECEIVE|JOIN by East|TOPIC|State.tb=%s-0-1|{"table":{"seqnum":3,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+RECEIVE|JOIN by West|TOPIC|State.tb=%s-0-1|{"table":{"seqnum":4,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+
+# Join South
+SEND|JOIN by South|QUEUE|Event.tb=%s-0-1|{"action":1,"id":"79","seat":4,"type":"player"}
+RECEIVE|JOIN by South|TOPIC|State.tb=%s-0-1|{"table":{"seqnum":5,"trigger":{"action":1,"external":false,"id":"79","seat":4,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+
+# Get TAKE DEAL message
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=%s-0-1|{"table":{"seqnum":6,"trigger":{"action":2,"board":{"dealer":2,"number":1,"vul":1},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":2}}}
+
+# Register a second table and get join messages from robots
+SEND|Register a table|QUEUE|Event.tm=%s-0-0|{"event":8,"action":1,"playerid":"433","corrid":"16","replyto":"/queue/tableRegistered8"}
+RECEIVE|Confirm registration|QUEUE|tableRegistered8|{"status":true,"corrid":"16"}
+RECEIVE|Startup state dump|TOPIC|State.tb=%s-0-2|{"table":{"seqnum":1,"trigger":{"action":0,"type":"command"},"turn":{"message":""}}}
+
+RECEIVE|JOIN by North|TOPIC|State.tb=%s-0-2|{"table":{"seqnum":2,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+RECEIVE|JOIN by East|TOPIC|State.tb=%s-0-2|{"table":{"seqnum":3,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+RECEIVE|JOIN by West|TOPIC|State.tb=%s-0-2|{"table":{"seqnum":4,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+
+# Join South
+SEND|JOIN by South|QUEUE|Event.tb=%s-0-2|{"action":1,"id":"433","seat":4,"type":"player"}
+RECEIVE|JOIN by South|TOPIC|State.tb=%s-0-2|{"table":{"seqnum":5,"trigger":{"action":1,"external":false,"id":"433","seat":4,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+
+# Get TAKE DEAL message
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=%s-0-2|{"table":{"seqnum":6,"trigger":{"action":2,"board":{"dealer":2,"number":1,"vul":1},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":2}}}
+
+SEND|Pause a table|QUEUE|Event.tm=%s-0-0|{"event":8,"action":2,"playerid":"79","corrid":"16","replyto":"/queue/tableRegistered8"}
+RECEIVE|Confirm pause|QUEUE|tableRegistered8|{"status":true,"corrid":"16"}
+SEND|Resume a table|QUEUE|Event.tm=%s-0-0|{"event":8,"action":3,"playerid":"79","corrid":"17","replyto":"/queue/tableRegistered8"}
+RECEIVE|Confirm resumation|QUEUE|tableRegistered8|{"status":true,"corrid":"17"}
+
+# Send an invalid Pause
+SEND|Pause an invalid table|QUEUE|Event.tm=%s-0-0|{"event":8,"action":2,"playerid":"81","corrid":"18","replyto":"/queue/tableRegistered8"}
+RECEIVE|Confirm failure|QUEUE|tableRegistered8|{"status":false,"corrid":"18"}

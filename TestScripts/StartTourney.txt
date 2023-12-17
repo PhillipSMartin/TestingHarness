@@ -1,0 +1,17 @@
+TEST|Start Tourney
+
+# To test
+#    go to Bridge/backend directory and execute
+#        bin/run_setup.sh (kills any existing Sections and Tables and clean the /tmp directory of logfiles)
+#        bin/run_SessionLauncher.sh (starts the Launcher process)
+#    go to TestingHarness/build directory and execute
+#        ./run_test.sh StartTourney local 
+
+# Launch
+SEND|Launch tournament|QUEUE|Q.SessionLaunch|{"bpr":2,"corrid":"25","flags":0,"form":"M","histkey":"q:dealHistory:all","id":"lh-test","mvmt":"HOWELL","pairs":4,"replyto":"/queue/tournamentLaunched8","resultkey":"q:tournamentResult:all","rounds":3,"tables":2,"title":"Test"}
+RECEIVE|Launch reply|QUEUE|tournamentLaunched8|{"corrid":"25","status":true,"tourney":{"field":[{"index":0,"tables":[{"ewno":1,"iids":[1,2],"nsno":2,"tableno":1},{"ewno":3,"iids":[4,3],"nsno":4,"tableno":2}]}],"total":2}}
+
+# Receive initial state dumps
+RECEIVE|INITIAL state dump (can take a few minutes)|TOPIC|State.tm=%s-0-0|{"notice":7,"round":1,"seating":[[{"ewno":1,"nsno":2,"tableno":1},{"ewno":3,"nsno":4,"tableno":2}],[{"ewno":2,"nsno":3,"tableno":1},{"ewno":1,"nsno":4,"tableno":2}],[{"ewno":3,"nsno":1,"tableno":1},{"ewno":2,"nsno":4,"tableno":2}]]}
+RECEIVE|Startup state dump|TOPIC|State.tb=%s-0-1|{"table":{"seqnum":1,"trigger":{"action":0,"type":"command"},"turn":{"message":""}}}
+RECEIVE|Startup state dump|TOPIC|State.tb=%s-0-2|{"table":{"seqnum":1,"trigger":{"action":0,"type":"command"},"turn":{"message":""}}}

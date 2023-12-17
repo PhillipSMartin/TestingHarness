@@ -1,0 +1,11 @@
+Event.tb|1|%s=%s-%d|
+Event.tm|1|%s=%s-0|
+State.tb|0|%s=%s-%d|
+State.tm|0|%s=%s-0|
+Q.MasterpointLaunch|1|%s|
+Q.SectionLaunch|1|%s|
+Q.TableLaunch|1|%s|
+masterpointLaunched8|1|%s|
+tournamentLaunched8|1|%s|
+masterpointResult|1|%s|
+diagnosticsResult|1|%s|

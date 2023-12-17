@@ -1,0 +1,60 @@
+TEST|Launch Robot Daylong
+
+# To test:
+#   go to Bridge/backend directory and execute
+#       bin/run_setup.sh (kills any existing Sections and Tables and clean the /tmp directory of logfiles)
+#       bin/run_SessionLauncher.sh (starts the Launcher process)
+#       bin/run_LaunchScorer.sh (starts the Scorer service)
+#   go to TestingHarness/build directory and execute
+#       ./run_test.sh LaunchRobotDaylong local 
+
+# Launch
+SEND|Launch tournament|QUEUE|Q.SessionLaunch|{"bpr":3,"corrid":"25","besthand":true,"endtime":"23:59","poolsize":2,"flags":0,"form":"M","histkey":"q:dealHistory:all","id":"lh-test","replyto":"/queue/tournamentLaunched8","resultkey":"q:tournamentResult:all","title":"Test"}
+RECEIVE|Launch reply|QUEUE|tournamentLaunched8|{"corrid":"25","status":true}
+
+
+# Register table 1
+SEND|Register a table|QUEUE|Event.tm=%s-0-0|{"event":8,"action":1,"robot":true,"playerid":"79","corrid":"15","replyto":"/queue/tableRegistered8"}
+RECEIVE|Confirm registration|QUEUE|tableRegistered8|{"status":true,"corrid":"15","iid":1}
+RECEIVE|Register state dump|TOPIC|State.tm=%s-0-0|{"notice":18,"tables":[{"playerid":"79","tableno":1}],"trigger":{"event":8,"action":1}}
+
+# Play all boards
+RECEIVE|UPDATE state dump board 1|TOPIC|State.tm=%s-0-0|{"notice":18,"trigger":{"board":1,"event":2,"tableno":1}}
+RECEIVE|UPDATE state dump board 2|TOPIC|State.tm=%s-0-0|{"notice":18,"trigger":{"board":2,"event":2,"tableno":1}}
+RECEIVE|UPDATE state dump board 3|TOPIC|State.tm=%s-0-0|{"notice":18,"trigger":{"board":3,"event":2,"tableno":1}}
+RECEIVE|Recorder EOR message - Table 1|TOPIC|State.sc=%s|{"action":5,"roster":[{"count":3,"iid":1,"pairno":1,"raw":150.0,"total":50.0}],"round":2,"secno":0,"type":"DManager"}
+
+
+# Register table 2
+SEND|Register a table|QUEUE|Event.tm=%s-0-0|{"event":8,"action":1,"robot":true,"playerid":"80","corrid":"16","replyto":"/queue/tableRegistered8"}
+RECEIVE|Confirm registration|QUEUE|tableRegistered8|{"status":true,"corrid":"16","iid":3}
+RECEIVE|Register state dump|TOPIC|State.tm=%s-0-0|{"notice":18,"tables":[{"playerid":"79","tableno":1},{"playerid":"80","tableno":2}],"trigger":{"event":8,"action":1}}
+
+# Play all boards
+RECEIVE|UPDATE state dump board 1|TOPIC|State.tm=%s-0-0|{"notice":18,"trigger":{"board":1,"event":2,"tableno":2}}
+RECEIVE|UPDATE state dump board 2|TOPIC|State.tm=%s-0-0|{"notice":18,"trigger":{"board":2,"event":2,"tableno":2}}
+RECEIVE|UPDATE state dump board 3|TOPIC|State.tm=%s-0-0|{"notice":18,"trigger":{"board":3,"event":2,"tableno":2}}
+RECEIVE|Recorder EOR message - Table 2|TOPIC|State.sc=%s|{"action":5,"round":2,"secno":0,"type":"DManager"}
+
+
+# Register table 3
+SEND|Register a table|QUEUE|Event.tm=%s-0-0|{"event":8,"action":1,"robot":true,"playerid":"81","corrid":"17","replyto":"/queue/tableRegistered8"}
+RECEIVE|Confirm registration|QUEUE|tableRegistered8|{"status":true,"corrid":"17","iid":5}
+RECEIVE|Register state dump|TOPIC|State.tm=%s-0-0|{"notice":18,"tables":[{"playerid":"79","tableno":1},{"playerid":"80","tableno":2},{"playerid":"81","tableno":3}],"trigger":{"event":8,"action":1}}
+
+# Play all boards
+RECEIVE|UPDATE state dump board 1|TOPIC|State.tm=%s-0-0|{"notice":18,"trigger":{"board":1,"event":2,"tableno":3}}
+RECEIVE|UPDATE state dump board 2|TOPIC|State.tm=%s-0-0|{"notice":18,"trigger":{"board":2,"event":2,"tableno":3}}
+RECEIVE|UPDATE state dump board 3|TOPIC|State.tm=%s-0-0|{"notice":18,"trigger":{"board":3,"event":2,"tableno":3}}
+RECEIVE|Recorder EOR message - Table 3|TOPIC|State.sc=%s|{"action":5,"round":2,"secno":0,"type":"DManager"}
+
+
+# Send Timeout
+SEND|Force Timeout|QUEUE|Event.tm=%s-0-0|{"event":8,"action":4}
+RECEIVE|Timeout Section|TOPIC|State.tm=%s-0-0|{"action":13,"external":true,"notice":10,"type":"timer"}
+
+# EOT
+RECEIVE|EOR state dump|TOPIC|State.tm=%s-0-0|{"notice":18,"trigger":{"event":8,"action":4}}
+RECEIVE|EOT state dump|TOPIC|State.tm=%s-0-0|{"notice":18,"trigger":{"event":8,"action":5}}
+
+RECEIVE|Recorder - Final|TOPIC|State.sc=%s|{"notice":4,"round":2,"secno":0}

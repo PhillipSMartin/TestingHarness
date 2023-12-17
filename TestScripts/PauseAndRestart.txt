@@ -1,0 +1,172 @@
+TEST|Pause and restart Daylong Tourney 
+
+# To test:
+#    go to Bridge/backend directory and execute
+#        bin/run_setup.sh (kills any existing Sections and Tables and clean the /tmp directory of logfiles)
+#        (do not start SessionLauncher)
+#    go to TestingHarness/build directory and execute
+#        ./run_test.sh PauseAndRestart local
+#    go to Bridge/backend directory and execute
+#        bin/run_daylong_tourney.sh 2
+#        (be sure to specify 2)
+
+# Register a table and get join messages from robots
+SEND|Register a table|QUEUE|Event.tm=lh-test-0-0|{"event":8,"action":1,"playerid":"79","corrid":"15","testmode":true,"replyto":"/queue/tableRegistered8"}
+RECEIVE|Confirm registration|QUEUE|tableRegistered8|{"action":1,"corrid":"15","event":8,"playerid":"79","replyto":"/queue/tableRegistered8","status":true}
+RECEIVE|Register state dump|TOPIC|State.tm=lh-test-0-0|{"notice":18,"tables":[{"playerid":"79","tableno":1}],"trigger":{"event":8,"action":1}}
+RECEIVE|Startup state dump|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":1,"trigger":{"action":0,"type":"command"}}}
+
+# Get diagnostics
+SEND|Request bdmgr|QUEUE|Event.tb=lh-test-0-1|{"type":"diagnostics","bdmgr":1,"replyto":"diagnosticsResult"}
+RECEIVE|Show bdmgr|QUEUE|diagnosticsResult|{"bdmgr":{"round":0}}
+
+RECEIVE|JOIN by North|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":2,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+RECEIVE|JOIN by East|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":3,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+RECEIVE|JOIN by West|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":4,"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+
+# Join South
+SEND|JOIN by South|QUEUE|Event.tb=lh-test-0-1|{"action":1,"id":"79","seat":4,"type":"player"}
+RECEIVE|JOIN by South|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":5,"trigger":{"action":1,"external":false,"id":"79","seat":4,"type":"player"},"turn":{"message":"","phase":0,"status":0,"who":0}}}
+
+# Board 1 Table 1 - Bid to 5C by North
+RECEIVE|TAKE DEAL message|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":6,"tableid":"lh-test-0-1","trigger":{"action":2,"board":{"dealer":2,"number":1,"vul":1},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":2}}}
+
+# Get diagnostics
+SEND|Request bdmgr|QUEUE|Event.tb=lh-test-0-1|{"type":"diagnostics","bdmgr":1,"replyto":"diagnosticsResult"}
+RECEIVE|Show bdmgr|QUEUE|diagnosticsResult|{"bdmgr":{"round":0}}
+
+SEND|5C by North|QUEUE|Event.tb=lh-test-0-1|{"alert":"","call":21,"seat":2,"type":"auction"}
+RECEIVE|5C by North|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":7,"tableid":"lh-test-0-1","trigger":{"alert":"","call":21,"seat":2,"type":"auction"}}}
+SEND|P by East|QUEUE|Event.tb=lh-test-0-1|{"alert":"","call":38,"seat":3,"type":"auction"}
+RECEIVE|P by East|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":8,"tableid":"lh-test-0-1","trigger":{"alert":"","call":38,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=lh-test-0-1|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":9,"tableid":"lh-test-0-1","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=lh-test-0-1|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":10,"tableid":"lh-test-0-1","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+RECEIVE|PHASE TIMER canceled|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":11,"tableid":"lh-test-0-1","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Board 1 Table 1 - Make Opening lead and claim making 5
+SEND|Opening lead by East|QUEUE|Event.tb=lh-test-0-1|{"card":1,"seat":3,"type":"cardplay"}
+RECEIVE|Opening lead by East|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":12,"tableid":"lh-test-0-1","trigger":{"card":1,"seat":3,"type":"cardplay"}}}
+SEND|Claim 11 tricks by North|QUEUE|Event.tb=lh-test-0-1|{"action":5,"comment":"Marked double squeeze","seat":2,"tricks":11,"type":"command"}
+SEND|Claim accepted by East|QUEUE|Event.tb=lh-test-0-1|{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}
+SEND|Claim accepted by West|QUEUE|Event.tb=lh-test-0-1|{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}
+RECEIVE|Claim 11 tricks by North|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":13,"tableid":"lh-test-0-1","trigger":{"action":5,"comment":"Marked double squeeze","seat":2,"tricks":11,"type":"command"}}}
+RECEIVE|Claim accepted by East|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":14,"tableid":"lh-test-0-1","trigger":{"action":6,"number":1,"seat":3,"reject":false,"type":"command"}}}
+RECEIVE|Claim accepted by West|TOPIC|State.tb=lh-test-0-1|{"table":{"seqnum":15,"tableid":"lh-test-0-1","trigger":{"action":6,"number":1,"seat":1,"reject":false,"type":"command"}}}
+RECEIVE|UPDATE state dump|TOPIC|State.tm=lh-test-0-0|{"notice":18,"trigger":{"board":1,"event":2,"tableno":1}}
+
+# Board 2 Table 1 - Take deal 
+RECEIVE|TAKE DEAL 2|TOPIC|State.tb=lh-test-0-1|{"table":{"tableid":"lh-test-0-1","trigger":{"action":2,"board":{"dealer":3,"number":2,"vul":2},"type":"command"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":3}}}
+
+# Get diagnostics
+SEND|Request bdmgr|QUEUE|Event.tb=lh-test-0-1|{"type":"diagnostics","bdmgr":1,"params":1,"replyto":"diagnosticsResult"}
+RECEIVE|Show bdmgr|QUEUE|diagnosticsResult|{"bdmgr":{"round":0},"params":{"round":1}}
+
+# Pause table 1 before auction
+SEND|PAUSE a table|QUEUE|Event.tm=lh-test-0-0|{"corrid":"15","event":8,"action":2,"playerid":"79","replyto":"/queue/tableRegistered8"}
+RECEIVE|PAUSE Table 1|TOPIC|State.tb=lh-test-0-1|{"table":{"trigger":{"action":2,"type":"DManager"}}}
+RECEIVE|Confirm PAUSE|QUEUE|tableRegistered8|{"action":2,"corrid":"15","event":8,"playerid":"79","replyto":"/queue/tableRegistered8","status":true}
+RECEIVE|PAUSE state dump|TOPIC|State.tm=lh-test-0-0|{"notice":18,"trigger":{"event":8,"action":2}}
+
+# Resume table 1 for board 2
+SEND|RESUME a table|QUEUE|Event.tm=lh-test-0-0|{"corrid":"15","event":8,"action":3,"playerid":"79","replyto":"/queue/tableRegistered8"}
+RECEIVE|Confirm RESUME|QUEUE|tableRegistered8|{"action":3,"corrid":"15","event":8,"playerid":"79","replyto":"/queue/tableRegistered8","status":true}
+RECEIVE|RESUME Table 1|TOPIC|State.tb=lh-test-0-1|{"table":{"trigger":{"action":2,"type":"DManager"}}}
+RECEIVE|RESUME state dump|TOPIC|State.tm=lh-test-0-0|{"notice":18,"trigger":{"event":8,"action":3}}
+
+RECEIVE|JOIN by North|TOPIC|State.tb=lh-test-0-1|{"table":{"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":3}}}
+RECEIVE|JOIN by East|TOPIC|State.tb=lh-test-0-1|{"table":{"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":3}}}
+RECEIVE|JOIN by West|TOPIC|State.tb=lh-test-0-1|{"table":{"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"Start bidding","phase":1,"status":1,"who":3}}}
+
+# Get diagnostics
+SEND|Request bdmgr|QUEUE|Event.tb=lh-test-0-1|{"type":"diagnostics","bdmgr":1,"params":1,"players":1,"replyto":"diagnosticsResult"}
+RECEIVE|Show bdmgr|QUEUE|diagnosticsResult|{"bdmgr":{"round":0},"params":{"round":1}}
+
+# Board 2 Table 1 - Bid to 3NT by East
+SEND|3N by East|QUEUE|Event.tb=lh-test-0-1|{"alert":"","call":15,"seat":3,"type":"auction"}
+RECEIVE|3N by East|TOPIC|State.tb=lh-test-0-1|{"table":{"tableid":"lh-test-0-1","trigger":{"alert":"","call":15,"seat":3,"type":"auction"}}}
+SEND|P by South|QUEUE|Event.tb=lh-test-0-1|{"alert":"","call":38,"seat":4,"type":"auction"}
+RECEIVE|P by South|TOPIC|State.tb=lh-test-0-1|{"table":{"tableid":"lh-test-0-1","trigger":{"alert":"","call":38,"seat":4,"type":"auction"}}}
+SEND|P by West|QUEUE|Event.tb=lh-test-0-1|{"alert":"","call":38,"seat":1,"type":"auction"}
+RECEIVE|P by West|TOPIC|State.tb=lh-test-0-1|{"table":{"tableid":"lh-test-0-1","trigger":{"alert":"","call":38,"seat":1,"type":"auction"}}}
+SEND|P by North|QUEUE|Event.tb=lh-test-0-1|{"alert":"","call":38,"seat":2,"type":"auction"}
+RECEIVE|P by North|TOPIC|State.tb=lh-test-0-1|{"table":{"tableid":"lh-test-0-1","trigger":{"alert":"","call":38,"seat":2,"type":"auction"}}}
+
+# Pause table 1 before play
+SEND|PAUSE a table|QUEUE|Event.tm=lh-test-0-0|{"corrid":"15","event":8,"action":2,"playerid":"79","replyto":"/queue/tableRegistered8"}
+RECEIVE|PAUSE Table 1|TOPIC|State.tb=lh-test-0-1|{"table":{"trigger":{"action":2,"type":"DManager"}}}
+RECEIVE|Confirm PAUSE|QUEUE|tableRegistered8|{"action":2,"corrid":"15","event":8,"playerid":"79","replyto":"/queue/tableRegistered8","status":true}
+RECEIVE|PAUSE state dump|TOPIC|State.tm=lh-test-0-0|{"notice":18,"trigger":{"event":8,"action":2}}
+
+# Resume table 1 after bidding
+SEND|RESUME a table|QUEUE|Event.tm=lh-test-0-0|{"corrid":"15","event":8,"action":3,"playerid":"79","replyto":"/queue/tableRegistered8"}
+RECEIVE|Confirm RESUME|QUEUE|tableRegistered8|{"action":3,"corrid":"15","event":8,"playerid":"79","replyto":"/queue/tableRegistered8","status":true}
+RECEIVE|RESUME Table 1|TOPIC|State.tb=lh-test-0-1|{"table":{"trigger":{"action":2,"type":"DManager"}}}
+RECEIVE|RESUME state dump|TOPIC|State.tm=lh-test-0-0|{"notice":18,"trigger":{"event":8,"action":3}}
+RECEIVE|JOIN by North|TOPIC|State.tb=lh-test-0-1|{"table":{"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"Opening leader: South (3 second wait)","phase":1,"status":1,"who":4}}}
+RECEIVE|JOIN by East|TOPIC|State.tb=lh-test-0-1|{"table":{"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"Opening leader: South (3 second wait)","phase":1,"status":1,"who":4}}}
+RECEIVE|JOIN by West|TOPIC|State.tb=lh-test-0-1|{"table":{"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"Opening leader: South (3 second wait)","phase":1,"status":1,"who":4}}}
+RECEIVE|PHASE TIMER expired|TOPIC|State.tb=lh-test-0-1|{"table":{"tableid":"lh-test-0-1","trigger":{"action":11,"external":false,"type":"timer"}}}
+
+# Pause table
+SEND|PAUSE a table|QUEUE|Event.tm=lh-test-0-0|{"corrid":"15","event":8,"action":2,"playerid":"79","replyto":"/queue/tableRegistered8"}
+RECEIVE|PAUSE Table 1|TOPIC|State.tb=lh-test-0-1|{"table":{"trigger":{"action":2,"type":"DManager"}}}
+RECEIVE|Confirm PAUSE|QUEUE|tableRegistered8|{"action":2,"corrid":"15","event":8,"playerid":"79","replyto":"/queue/tableRegistered8","status":true}
+RECEIVE|PAUSE state dump|TOPIC|State.tm=lh-test-0-0|{"notice":18,"trigger":{"event":8,"action":2}}
+
+# Resume table and continue play
+SEND|RESUME a table|QUEUE|Event.tm=lh-test-0-0|{"corrid":"15","event":8,"action":3,"playerid":"79","replyto":"/queue/tableRegistered8"}
+RECEIVE|Confirm RESUME|QUEUE|tableRegistered8|{"action":3,"corrid":"15","event":8,"playerid":"79","replyto":"/queue/tableRegistered8","status":true}
+RECEIVE|RESUME Table 1|TOPIC|State.tb=lh-test-0-1|{"table":{"trigger":{"action":2,"type":"DManager"}}}
+RECEIVE|RESUME state dump|TOPIC|State.tm=lh-test-0-0|{"notice":18,"trigger":{"event":8,"action":3}}
+
+RECEIVE|JOIN by North|TOPIC|State.tb=lh-test-0-1|{"table":{"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"Opening leader: South","phase":2,"status":1,"who":4}}}
+RECEIVE|JOIN by East|TOPIC|State.tb=lh-test-0-1|{"table":{"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"Opening leader: South","phase":2,"status":1,"who":4}}}
+RECEIVE|JOIN by West|TOPIC|State.tb=lh-test-0-1|{"table":{"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"Opening leader: South","phase":2,"status":1,"who":4}}}
+
+# Board 2 Table 1 - Make Opening lead and claim making 4
+SEND|Opening lead by South|QUEUE|Event.tb=lh-test-0-1|{"card":2,"seat":4,"type":"cardplay"}
+RECEIVE|Opening lead by South|TOPIC|State.tb=lh-test-0-1|{"table":{"tableid":"lh-test-0-1","trigger":{"card":2,"seat":4,"type":"cardplay"}}}
+SEND|Claim 10 tricks by East|QUEUE|Event.tb=lh-test-0-1|{"action":5,"comment":"","seat":3,"tricks":10,"type":"command"}
+RECEIVE|Claim 10 tricks by East|TOPIC|State.tb=lh-test-0-1|{"table":{"tableid":"lh-test-0-1","trigger":{"action":5,"comment":"","seat":3,"tricks":10,"type":"command"}}}
+
+# Pause table 1 during claim
+SEND|PAUSE a table|QUEUE|Event.tm=lh-test-0-0|{"corrid":"15","event":8,"action":2,"playerid":"79","replyto":"/queue/tableRegistered8"}
+RECEIVE|PAUSE Table 1|TOPIC|State.tb=lh-test-0-1|{"table":{"trigger":{"action":2,"type":"DManager"}}}
+RECEIVE|Confirm PAUSE|QUEUE|tableRegistered8|{"action":2,"corrid":"15","event":8,"playerid":"79","replyto":"/queue/tableRegistered8","status":true}
+RECEIVE|PAUSE state dump|TOPIC|State.tm=lh-test-0-0|{"notice":18,"trigger":{"event":8,"action":2}}
+
+
+# Accept claim by North
+SEND|Claim accepted by North|QUEUE|Event.tb=lh-test-0-1|{"action":6,"number":1,"seat":2,"reject":false,"type":"command"}
+
+# Resume table 1 
+SEND|RESUME a table|QUEUE|Event.tm=lh-test-0-0|{"corrid":"15","event":8,"action":3,"playerid":"79","replyto":"/queue/tableRegistered8"}
+RECEIVE|Confirm RESUME|QUEUE|tableRegistered8|{"action":3,"corrid":"15","event":8,"playerid":"79","replyto":"/queue/tableRegistered8","status":true}
+RECEIVE|RESUME Table 1|TOPIC|State.tb=lh-test-0-1|{"table":{"trigger":{"action":2,"type":"DManager"}}}
+RECEIVE|RESUME state dump|TOPIC|State.tm=lh-test-0-0|{"notice":18,"trigger":{"event":8,"action":3}}
+
+# Receive claim posted before resume
+RECEIVE|Claim accepted by North|TOPIC|State.tb=lh-test-0-1|{"table":{"tableid":"lh-test-0-1","trigger":{"action":6,"number":1,"seat":2,"reject":false,"type":"command"}}}
+
+RECEIVE|JOIN by North|TOPIC|State.tb=lh-test-0-1|{"table":{"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"Opening leader: South","phase":2,"status":1,"who":1}}}
+RECEIVE|JOIN by East|TOPIC|State.tb=lh-test-0-1|{"table":{"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"Opening leader: South","phase":2,"status":1,"who":1}}}
+RECEIVE|JOIN by West|TOPIC|State.tb=lh-test-0-1|{"table":{"trigger":{"action":1,"external":false,"type":"player"},"turn":{"message":"Opening leader: South","phase":2,"status":1,"who":1}}}
+
+# Let claim timer expire
+RECEIVE|CLAIM TIMER expired|TOPIC|State.tb=lh-test-0-1|{"table":{"tableid":"lh-test-0-1","trigger":{"action":7,"external":false,"type":"timer"}}}
+RECEIVE|UPDATE state dump|TOPIC|State.tm=lh-test-0-0|{"notice":18,"trigger":{"board":2,"event":2,"tableno":1}}
+
+# End of round for Table 1
+RECEIVE|Table 1 EOT message|TOPIC|State.tb=lh-test-0-1|{"table":{"tableid":"lh-test-0-1","trigger":{"action":7,"tableid":"lh-test-0-1","roster":[{"count":2,"iid":1,"pairno":1,"player1":"Robot:2","player2":"79","raw":100.0,"total":50.0}],"type":"command"}}}
+RECEIVE|Recorder EOR message - Table 1|TOPIC|State.sc=lh-test|{"action":5,"corrid":"25","id":"lh-test-0","roster":[{"count":2,"iid":1,"pairno":1,"player1":"Robot:2","player2":"79","raw":100.0,"total":50.0}],"round":2,"secno":0,"type":"DManager"}
+
+# Send Timeout
+SEND|Force Timeout|QUEUE|Event.tm=lh-test-0-0|{"event":8,"action":4}
+RECEIVE|Timeout Section|TOPIC|State.tm=lh-test-0-0|{"action":13,"external":true,"notice":10,"type":"timer"}
+RECEIVE|EOR state dump|TOPIC|State.tm=lh-test-0-0|{"notice":18,"trigger":{"event":8,"action":4}}
+RECEIVE|EOT state dump|TOPIC|State.tm=lh-test-0-0|{"notice":18,"trigger":{"event":8,"action":5}}
+
+# EOT Sent to Recorder
+RECEIVE|Recorder - Final|TOPIC|State.sc=lh-test|{"notice":4,"corrid":"25","id":"lh-test-0","roster":[{"count":2,"iid":1,"raw":100.0,"total":50.0}],"round":2,"secno":0}

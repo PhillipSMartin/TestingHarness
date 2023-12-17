@@ -1,0 +1,66 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - yum update -y
+      - yum install cmake3 gcc-c++ gtk3-devel -y
+  build:
+    commands:
+      - cd lib
+      - rm libactivemq-cpp.so libapr-1.so
+      - ln -s libactivemq-cpp.so.19.0.5 libactivemq-cpp.so
+      - ln -s libapr-1.so.0.7.0 libapr-1.so
+      - cd ..
+      - mkdir build
+      - cd build
+      - cmake3 ../
+      - cmake3 --build .
+      - mkdir lib
+      - cp ../lib/libactivemq-cpp.so.19.0.5 lib/
+      - cp ../lib/libapr-1.so.0.7.0 lib/
+
+artifacts:
+  files:
+    - TestingHarness
+    - install.sh
+    - run_test.sh
+    - run_GUI.sh
+    - Destinations.txt
+    - Event.tb.templates.txt
+    - Event.tm.templates.txt
+    - State.tm.templates.txt
+    - Q.TourneyLaunch.templates.txt
+    - Q.MasterpointLaunch.templates.txt
+    - Q.SectionLaunch.templates.txt
+    - Scripts/AllLaunchTests.txt 
+    - Scripts/AllRobotTests.txt
+    - Scripts/AllSessionTests.txt
+    - Scripts/DaylongTable.txt 
+    - Scripts/DaylongTableRestart.txt
+    - Scripts/DaylongWithRobots.txt 
+    - Scripts/DaylongWithRobotsAllSeats.txt 
+    - Scripts/DaylongWithRobotsRestart.txt 
+    - Scripts/Diagnostics.txt
+    - Scripts/FullDaylong.txt 
+    - Scripts/FullTourney.txt 
+    - Scripts/LaunchDaylong.txt 
+    - Scripts/LaunchLargeDaylong.txt 
+    - Scripts/LaunchRobotDaylong.txt 
+    - Scripts/LaunchTourney.txt
+    - Scripts/OneBoardDaylong.txt 
+    - Scripts/PauseAndRestart.txt 
+    - Scripts/README.txt 
+    - Scripts/RequestStateDump.txt
+    - Scripts/ScoreTourney.txt
+    - Scripts/Sitout.txt
+    - Scripts/StartTourney.txt 
+    - Scripts/StartTwoSections.txt
+    - Scripts/TestMasterpoint.txt
+    - Scripts/TwoBoardDaylong.txt 
+    - Scripts/ZeroBoardDaylong.txt 
+    - libssl.so.1.0.0
+    - libcrypto.so.1.0.0 
+    - lib/libactivemq-cpp.so.19.0.5
+    - lib/libapr-1.so.0.7.0
+  base-directory: build
